@@ -1,0 +1,1380 @@
+openapi: 3.0.1
+info:
+  title: geosys-api
+  version: '1.0'
+  contact:
+    name: Geobase
+  description: "API permettant d'interagir avec GeoSys."
+servers:
+  - url: 'http://localhost:8080/geosys-api/v1'
+paths:
+  /systeme/contenants:
+    post:
+      summary: ''
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: contenant_url
+          required: true
+          description: URL identifiant le contenant.
+      operationId: post-systeme-contenants
+      description: "Création d'un contenant (bucket) pour le stockage de fichiers."
+      tags:
+        - systeme
+      security:
+        - geosys_auth:
+            - write
+    delete:
+      summary: ''
+      responses:
+        '204':
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_erreur'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_erreur'
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: contenant_url
+          required: true
+          description: URL identifiant le contenant.
+      description: "Efface un contenant (bucket) et les fichiers qu'il contient."
+      operationId: delete-systeme-contenants
+      tags:
+        - systeme
+      security:
+        - geosys_auth:
+            - delete
+    parameters: []
+  /systeme/fichiers:
+    post:
+      summary: ''
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_erreur'
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      description: Téléverser un fichier.
+      operationId: post-systeme-fichier
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: fichier_url
+          required: true
+          description: Chemin complet du fichier.
+      tags:
+        - systeme
+      security:
+        - geosys_auth:
+            - write
+    get:
+      summary: ''
+      responses:
+        '302':
+          description: Found
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                description: Downloaded file as a stream of octet.
+              examples: {}
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_erreur'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_erreur'
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: fichier_url
+          required: true
+          description: Chemin complet du fichier.
+      description: Récupère un fichier
+      operationId: get-systeme-fichier
+      tags:
+        - systeme
+      security:
+        - geosys_auth:
+            - read
+    delete:
+      summary: ''
+      responses:
+        '204':
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                title: ReturnValue-BasicErrorMessage
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: fichier_url
+          required: true
+          description: Chemin complet du fichier.
+      description: Efface un fichier.
+      operationId: delete-systeme-fichier
+      tags:
+        - systeme
+      security:
+        - geosys_auth:
+            - delete
+    parameters: []
+  /securite/login:
+    get:
+      summary: ''
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/securite_reponse_login'
+              examples:
+                exTokenReturn:
+                  value:
+                    access_token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE1NzUzMDkxMzAsIm5iZiI6MTU3NTMwOTEzMSwiZXhwIjoxNTc1MzA5MTM1LCJpc3MiOiJOUkNhbiIsInNjb3BlIjoiZ2Vvc3lzOmFkbWluIGdlb3N5czp3cml0ZSBnZW9zeXM6cmVhZCJ9.eFCT0wxG06A7cWmXmLbP5__v-awiYAL_UFrqwVNbdkY
+                    token_type: Bearer
+                    expired_in: 3600
+                    scope:
+                      - 'read:geosys'
+                      - 'write:geosys'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                title: ReturnValue-BasicErrorMessage
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+      parameters:
+        - schema:
+            type: string
+          in: header
+          name: usager
+        - schema:
+            type: string
+          in: header
+          name: mot_de_passe
+          description: ''
+        - schema:
+            type: integer
+            default: '3600'
+          in: header
+          name: duree_token
+          description: Dur�e de vie du token en secondes.
+      operationId: get-securite-login
+      description: Valide un usager et retourne un jeton (token).
+      tags:
+        - securite
+    parameters: []
+  /systeme/ressources:
+    parameters: []
+    get:
+      summary: ''
+      operationId: get-systeme-ressources
+      responses:
+        '302':
+          description: Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/systeme_ress_retour'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/systeme_ress_requete'
+      description: "Retourne une ressource (paramètre ou un groupe de paramètres) à partir d'une liste de fichier."
+      tags:
+        - systeme
+      security:
+        - geosys_auth:
+            - read
+  /suivi-prod/codes:
+    get:
+      summary: ''
+      responses:
+        '302':
+          description: Found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/suivi_prod-code'
+              examples:
+                exCodes_01:
+                  value:
+                    - id: 10303
+                      id_liste_code: 10300
+                      nom: CORINT_50K
+                      desc_en: Correcting 50K data in a specific region
+                      desc_fr: Correction des données 50K dans une région spécifique
+                    - id: 10304
+                      id_liste_code: 10300
+                      nom: CORINT_250K
+                      desc_en: Correcting 250K data in a specific region
+                      desc_fr: Correction des données 250K dans une région spécifique
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_erreur'
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - SPATIAL_REPRES_TYPE_PNA
+              - STATUT_LOT_CL
+              - STATUT_ETAPE_CL
+              - STATUT_CONTRACTANT_CL
+              - THEME_CL
+              - TYPE_TRAVAIL_CL
+              - NOM_ETAPE_CL
+              - CLASSE_ENTITE_CL
+          in: query
+          name: categorie
+        - schema:
+            type: string
+          in: query
+          name: nom
+        - schema:
+            type: integer
+          in: query
+          name: id
+        - schema:
+            type: integer
+          in: query
+          name: id_list_codes
+      operationId: get-suivi-prod-codes
+      description: Obtient un enregistrement de la table suivi_prod.code.
+      tags:
+        - suivi-prod
+      security:
+        - geosys_auth:
+            - read
+    parameters: []
+  /suivi-prod/codelist:
+    get:
+      summary: ''
+      responses:
+        '302':
+          description: Found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/suivi_prod-code_list'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_erreur'
+      description: Obtient un enregistrement de la table suivi_prod.list_codes.
+      operationId: get-suivi-prod-code_list
+      parameters:
+        - schema:
+            type: integer
+          in: query
+          name: id
+        - schema:
+            type: string
+          in: query
+          name: nom
+      tags:
+        - suivi-prod
+      security:
+        - geosys_auth:
+            - read
+    parameters: []
+  '/suivi-prod/unite-travail/{identifiant}':
+    get:
+      summary: ''
+      responses:
+        '302':
+          description: Found
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/suivi_prod-unite_travail_2-no_rel'
+                  - $ref: '#/components/schemas/suivi_prod-unite_travail_2-full_rel'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_erreur'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_erreur'
+      parameters:
+        - schema:
+            type: boolean
+            default: 'false'
+            enum:
+              - 'true'
+              - 'false'
+          in: query
+          name: full_relation
+      operationId: get-suivi-prod-unite-travail-id
+      description: "Retourne un enregistrement de la table suivi-prod.unite_travail_2. En utilisant le paramètre full_relation=False vous obtener uniquement l'enregistrement de la table suivi-prod.unite_travail_2. En utilisant le paramètre full_relation=True vous obtenez l'enregistrement de la table suivi-prod.unite_travail_2 ainsi que toutes ses dépendances (l'information provenant des tables en relation)."
+      tags:
+        - suivi-prod
+      security:
+        - geosys_auth:
+            - read
+    parameters:
+      - schema:
+          type: string
+        name: identifiant
+        in: path
+        description: Work area id
+        required: true
+    delete:
+      summary: ''
+      responses:
+        '204':
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+      operationId: delete-suivi-prod-unite-travail-id
+      description: Delete a record in table unite_travail_2.
+      tags:
+        - suivi-prod
+      security:
+        - geosys_auth:
+            - delete
+    put:
+      summary: ''
+      operationId: put-suivi-prod-unite_travail-id
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+      description: Update a record in unite_travail_2 table.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod-unite_travail_2-no_rel'
+        description: "Seulement les attributs non-null seront mise à jour. Le ID doit toujours avoir une valeur car c'est la clef de recherche."
+      tags:
+        - suivi-prod
+      security:
+        - geosys_auth:
+            - write
+  /suivi-prod/unite-travail:
+    post:
+      summary: ''
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+      description: Insert a new record in unite_travail_2
+      operationId: post-suivi-prod-unite-travail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod-unite_travail_2-no_rel'
+        description: ''
+      tags:
+        - suivi-prod
+      security:
+        - geosys_auth:
+            - write
+    parameters: []
+  '/suivi-prod/featuretype/{identifiant}':
+    get:
+      summary: Your GET endpoint
+      responses:
+        '302':
+          description: Found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/suivi_prod-featuretype'
+      operationId: get-suivi-prod-featuretype-id
+      description: Retreive a record from feature)type table.
+      tags:
+        - suivi-prod
+      security:
+        - geosys_auth:
+            - read
+    parameters:
+      - schema:
+          type: string
+        name: identifiant
+        in: path
+        required: true
+        description: ID from lot table
+    delete:
+      summary: ''
+      operationId: delete-suivi-prod-featuretype-id
+      responses:
+        '204':
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+      description: Delete one record from feature_type table.
+      tags:
+        - suivi-prod
+      security:
+        - geosys_auth:
+            - delete
+  /suivi-prod/featuretype:
+    post:
+      summary: ''
+      operationId: post-suivi-prod-featuretype
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+      description: Insert feature class inside feature_type table.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/suivi_prod-featuretype'
+        description: ''
+      tags:
+        - suivi-prod
+      security:
+        - geosys_auth:
+            - write
+    parameters: []
+  '/suivi-prod/lot/{identifiant}':
+    get:
+      summary: ''
+      responses:
+        '302':
+          description: Found
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/suivi_prod-lot-full_rel'
+                  - $ref: '#/components/schemas/suivi_prod-lot-no_rel'
+      operationId: get-suivi-prod-lot-id
+      description: Retrieve a record from Lot table. By using the parameter full_relation=False you can retreive only the Lot record or by using full_relation=True you can retreive the Lot and all its dependencies (related table records).
+      parameters:
+        - schema:
+            type: string
+            default: 'false'
+            enum:
+              - 'true'
+              - 'false'
+          in: query
+          name: full_relation
+      tags:
+        - suivi-prod
+      security:
+        - geosys_auth:
+            - read
+    parameters:
+      - schema:
+          type: string
+        name: identifiant
+        in: path
+        required: true
+    delete:
+      summary: ''
+      operationId: delete-suivi-prod-lot-id
+      responses:
+        '204':
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+      description: Delete a record in Lot table.
+      tags:
+        - suivi-prod
+      security:
+        - geosys_auth:
+            - delete
+    put:
+      summary: ''
+      operationId: put-suivi-prod-lot-id
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+      description: Update a record in Lot table.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod-lot-no_rel'
+        description: Only not null attributes in the JSON body will get updated. The id must not be empty.
+      tags:
+        - suivi-prod
+      security:
+        - geosys_auth:
+            - write
+  /suivi-prod/lot:
+    post:
+      summary: ''
+      operationId: post-suivi-prod-lot
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+      description: Insert a record in Lot table.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod-lot-no_rel'
+      tags:
+        - suivi-prod
+      security:
+        - geosys_auth:
+            - write
+    parameters: []
+  '/suivi-prod/etape-ut/{identifiant}':
+    get:
+      summary: Your GET endpoint
+      responses:
+        '302':
+          description: Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/suivi_prod-etape_ut'
+              examples: {}
+      operationId: get-suivi-prod-etape-ut-id
+      description: Retrieve a record from etape_ut table.
+      tags:
+        - suivi-prod
+      security:
+        - geosys_auth:
+            - read
+    parameters:
+      - schema:
+          type: string
+        name: identifiant
+        in: path
+        required: true
+    delete:
+      summary: ''
+      operationId: delete-suivi-prod-etape-ut-id
+      responses:
+        '204':
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+      description: Delete a record in etape_ut table.
+      tags:
+        - suivi-prod
+      security:
+        - geosys_auth:
+            - delete
+    put:
+      summary: ''
+      operationId: put-suivi-prod-etape-ut-id
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+      description: Update a record in etape_ut table.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod-etape_ut'
+        description: Only not null attributes in the JSON body will get updated. The id must not be empty.
+      tags:
+        - suivi-prod
+      security:
+        - geosys_auth:
+            - write
+  /suivi-prod/etape-ut:
+    post:
+      summary: ''
+      operationId: post-suivi-prod-etape-ut
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+      description: Insert a new record in etape_ut table.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod-etape_ut'
+      tags:
+        - suivi-prod
+      security:
+        - geosys_auth:
+            - write
+    parameters: []
+  /geosys/creer-md:
+    post:
+      summary: ''
+      operationId: post-geosys-creer-md
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+      description: Service intégrateur pour la création de métadonnées dans GeoSys.
+      tags:
+        - geosys
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/metadata_creation'
+      security:
+        - geosys_auth:
+            - write
+  /geosys/valider-md:
+    post:
+      summary: ''
+      operationId: post-geosys-valider-md
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+      description: "Service intégrateur pour la validation d'un fichier de métadonnées."
+      tags:
+        - geosys
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/metadata_validation'
+        description: ''
+      security:
+        - geosys_auth:
+            - read
+  '/securite/usager/{nom}':
+    get:
+      summary: ''
+      operationId: get-securite-usager-nom
+      responses:
+        '302':
+          description: Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_erreur'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_erreur'
+      tags:
+        - securite
+      security:
+        - geosys_auth:
+            - admin
+    parameters:
+      - schema:
+          type: string
+        name: nom
+        in: path
+        required: true
+    delete:
+      summary: ''
+      operationId: delete-securite-usager-nom
+      responses:
+        '204':
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_erreur'
+      security:
+        - geosys_auth:
+            - admin
+      description: ''
+      tags:
+        - securite
+  '/geodata/{identifiant}':
+    parameters:
+      - schema:
+          type: string
+        name: identifiant
+        in: path
+        required: true
+    post:
+      summary: ''
+      operationId: post-geodata-identifiant
+      responses:
+        '201':
+          description: Created
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/geodata_edition'
+        description: ''
+      tags:
+        - data
+      security:
+        - geosys_auth:
+            - write
+    put:
+      summary: ''
+      operationId: 'put-geodata-{identifiant}'
+      responses:
+        '202':
+          description: Accepted
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/geodata_edition'
+        description: ''
+      tags:
+        - data
+      security:
+        - geosys_auth:
+            - write
+    get:
+      summary: ''
+      operationId: get-geodata-identifiant
+      responses:
+        '302':
+          description: Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+      tags:
+        - data
+      security:
+        - geosys_auth:
+            - read
+            - write
+  /geodata:
+    get:
+      summary: ''
+      tags:
+        - data
+      responses:
+        '302':
+          description: Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+      operationId: get-geodata
+      description: Extraction de donnée à sens unique. La donnée extraite ne reviendra pas.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/geodata_lecture'
+      security:
+        - geosys_auth:
+            - read
+  '/systeme/ressources/{theme}':
+    parameters:
+      - schema:
+          type: string
+        name: theme
+        in: path
+        required: true
+    get:
+      summary: ''
+      tags:
+        - systeme
+      operationId: get-systeme-ressources-theme
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: env
+      description: Retourne les informations correspondant à un theme.
+      responses:
+        '302':
+          description: Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/systeme_ress_retour'
+      security:
+        - geosys_auth:
+            - read
+  /suivi-prod/planification:
+    post:
+      summary: ''
+      operationId: post-suivi-prod-planification
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+      description: "Service intégrateur permettant la création, selon un thème, d'un lot et d'une unité de travail en un seul appel."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod_planification'
+        description: ''
+      tags:
+        - suivi-prod
+      security:
+        - geosys_auth:
+            - write
+  /securite/usager:
+    post:
+      summary: ''
+      operationId: post-securite-usager
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_succes'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_erreur'
+      description: "Ajouter un nouvel usager de l'API GeoSys."
+      security:
+        - geosys_auth:
+            - admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/usager'
+      tags:
+        - securite
+components:
+  schemas:
+    message_erreur:
+      title: message_erreur
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      x-examples: {}
+    message_succes:
+      title: message_succes
+      type: object
+      properties:
+        value:
+          type: string
+      required:
+        - value
+      x-examples: {}
+    suivi_prod-unite_travail_2-no_rel:
+      title: suivi_prod-unite_travail_2-no_rel
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id:
+          type: string
+        id_lot:
+          type: string
+        date_prevue_fin:
+          type: string
+        date_debut_fin:
+          type: string
+        where_clause:
+          type: string
+        geom:
+          type: string
+    suivi_prod-lot-no_rel:
+      title: suivi_prod-lot-no_rel
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id:
+          type: string
+        operateur:
+          type: string
+        date_debut:
+          type: string
+        date_fin:
+          type: string
+        theme_cl:
+          type: integer
+        type_travail_cl:
+          type: integer
+        statut_lot_cl:
+          type: integer
+    suivi_prod-featuretype:
+      title: suivi_prod-featuretype
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id:
+          type: string
+        local_name:
+          type: string
+        spatial_repres_type_pna:
+          type: integer
+      description: ''
+    suivi_prod-code:
+      title: suivi_prod-code
+      type: object
+      properties:
+        id:
+          type: integer
+        id_liste_code:
+          type: integer
+        nom:
+          type: string
+        desc_en:
+          type: string
+        desc_fr:
+          type: string
+    suivi_prod-code_list:
+      title: suivi_prod-code_list
+      type: object
+      properties:
+        id:
+          type: integer
+        nom:
+          type: string
+        desc_en:
+          type: string
+        desc_fr:
+          type: string
+    suivi_prod-etape_ut:
+      title: suivi_prod-etape_ut
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id:
+          type: string
+        id_unite_travail:
+          type: string
+        nom_etape_cl:
+          type: integer
+        description:
+          type: string
+        operateur:
+          type: string
+        date_debut:
+          type: string
+        date_fin:
+          type: string
+        statut_etape_cl:
+          type: integer
+    suivi_prod-executant:
+      title: suivi_prod-executant
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id:
+          type: string
+        id_contractant:
+          type: string
+        no_contrat:
+          type: string
+        prix_contrat:
+          type: number
+    suivi_prod-sous_unite_travail-no_rel:
+      title: suivi_prod-sous_unite_travail-no_rel
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id:
+          type: string
+        id_unite_travail:
+          type: string
+        date_prevue_fin:
+          type: string
+        date_debut:
+          type: string
+        date_fin:
+          type: string
+    suivi_prod-sous_unite_travail-full_rel:
+      title: suivi_prod-sous_unite_travail-full_rel
+      type: object
+      properties:
+        sous_unite_travail:
+          $ref: '#/components/schemas/suivi_prod-sous_unite_travail-no_rel'
+        relation:
+          type: object
+          properties:
+            etape_sut:
+              type: array
+              items:
+                $ref: '#/components/schemas/suivi_prod-etape_sut'
+    suivi_prod-unite_travail_2-full_rel:
+      title: suivi_prod-unite_travail_2-full_rel
+      type: object
+      properties:
+        unite_travail_2:
+          $ref: '#/components/schemas/suivi_prod-unite_travail_2-no_rel'
+        relation:
+          type: object
+          properties:
+            etape_ut:
+              type: array
+              items:
+                $ref: '#/components/schemas/suivi_prod-etape_ut'
+            sous_unite_travail:
+              type: array
+              items:
+                $ref: '#/components/schemas/suivi_prod-sous_unite_travail-full_rel'
+    suivi_prod-lot-full_rel:
+      title: suivi_prod-lot-full_rel
+      type: object
+      properties:
+        lot:
+          $ref: '#/components/schemas/suivi_prod-lot-no_rel'
+        relation:
+          type: object
+          properties:
+            executant:
+              $ref: '#/components/schemas/suivi_prod-executant'
+            unite_travail_2:
+              type: array
+              items:
+                $ref: '#/components/schemas/suivi_prod-unite_travail_2-full_rel'
+            feature_type:
+              type: array
+              items:
+                $ref: '#/components/schemas/suivi_prod-featuretype'
+    suivi_prod-etape_sut:
+      title: suivi_prod-etape_sut
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id:
+          type: string
+        id_unite_travail:
+          type: string
+        nom_etape_cl:
+          type: integer
+        description:
+          type: string
+        operateur:
+          type: string
+        date_debut:
+          type: string
+        date_fin:
+          type: string
+        statut_etape_cl:
+          type: integer
+        id_sous_unite_travail:
+          type: string
+    usager:
+      title: usager
+      type: object
+      properties:
+        nom:
+          type: string
+        mot_de_passe:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        equipes:
+          type: array
+          items:
+            type: string
+        themes:
+          type: array
+          items:
+            type: string
+        cle_aws_id:
+          type: string
+    geodata_edition:
+      title: geodata_edition
+      type: object
+      properties:
+        fichier:
+          type: string
+    geodata_lecture:
+      title: geodata_lecture
+      type: object
+      description: ''
+      properties:
+        env:
+          type: string
+        theme:
+          type: string
+        id_lot:
+          type: string
+        clip:
+          type: string
+          enum:
+            - oui
+            - non
+        where_clause:
+          type: string
+        geom:
+          type: string
+    systeme_ress_retour:
+      title: systeme_ress_retour
+      type: object
+      properties:
+        valeur:
+          type: object
+    systeme_ress_requete:
+      title: systeme_ress_requete
+      type: object
+      properties:
+        fichiers:
+          type: array
+          items:
+            type: string
+        chemin_recherche:
+          type: array
+          items:
+            type: string
+    suivi_prod_planification:
+      title: suivi_prod_planification
+      type: object
+      properties:
+        env:
+          type: string
+        theme:
+          type: string
+        id_lot:
+          type: string
+        where_clause:
+          type: string
+        geom:
+          type: string
+    metadata_creation:
+      title: metadata_creation
+      type: object
+      properties:
+        env:
+          type: string
+        theme:
+          type: string
+        id_ut:
+          type: string
+        nom_catalogue:
+          type: string
+        prod_desc:
+          type: string
+        description_projet:
+          type: string
+        logfile:
+          type: string
+        liste_id_source:
+          type: array
+          maxItems: 8
+          items:
+            type: string
+        liste_id_precision:
+          type: array
+          maxItems: 3
+          items:
+            type: string
+        liste_id_contraintes_legales:
+          type: array
+          maxItems: 3
+          items:
+            type: string
+      required:
+        - env
+        - theme
+        - id_ut
+        - nom_catalogue
+        - prod_desc
+    metadata_validation:
+      title: metadata_validation
+      type: object
+      properties:
+        env:
+          type: string
+        theme:
+          type: string
+        id_ut:
+          type: string
+        fichier_json:
+          type: string
+          format: binary
+        logfile:
+          type: string
+    securite_reponse_login:
+      title: securite_reponse_login
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+        expires_in:
+          type: integer
+        scope:
+          type: array
+          items:
+            type: string
+  securitySchemes:
+    geosys_auth:
+      flows:
+        implicit:
+          authorizationUrl: 'http://geosys/api/oauth/dialog'
+          scopes:
+            write: "Ajouter ou modifier l'information"
+            read: "Lire l'information"
+            delete: "Effacer l'information"
+            admin: Tous les droits
+      type: oauth2
