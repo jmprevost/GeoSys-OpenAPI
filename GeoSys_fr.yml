@@ -107,8 +107,8 @@ paths:
     get:
       summary: ''
       responses:
-        '302':
-          description: Found
+        '200':
+          description: OK
           content:
             application/octet-stream:
               schema:
@@ -236,8 +236,8 @@ paths:
       summary: ''
       operationId: get-systeme-ressources
       responses:
-        '302':
-          description: Found
+        '200':
+          description: OK
           content:
             application/json:
               schema:
@@ -257,8 +257,8 @@ paths:
     get:
       summary: ''
       responses:
-        '302':
-          description: Found
+        '200':
+          description: OK
           content:
             application/json:
               schema:
@@ -322,8 +322,8 @@ paths:
     get:
       summary: ''
       responses:
-        '302':
-          description: Found
+        '200':
+          description: OK
           content:
             application/json:
               schema:
@@ -357,8 +357,8 @@ paths:
     get:
       summary: ''
       responses:
-        '302':
-          description: Found
+        '200':
+          description: OK
           content:
             application/json:
               schema:
@@ -466,8 +466,8 @@ paths:
     get:
       summary: Your GET endpoint
       responses:
-        '302':
-          description: Found
+        '200':
+          description: OK
           content:
             application/json:
               schema:
@@ -534,8 +534,8 @@ paths:
     get:
       summary: ''
       responses:
-        '302':
-          description: Found
+        '200':
+          description: OK
           content:
             application/json:
               schema:
@@ -629,8 +629,8 @@ paths:
     get:
       summary: Your GET endpoint
       responses:
-        '302':
-          description: Found
+        '200':
+          description: OK
           content:
             application/json:
               schema:
@@ -760,8 +760,8 @@ paths:
       summary: ''
       operationId: get-securite-usager-nom
       responses:
-        '302':
-          description: Found
+        '200':
+          description: OK
           content:
             application/json:
               schema:
@@ -856,8 +856,8 @@ paths:
       summary: ''
       operationId: get-geodata-identifiant
       responses:
-        '302':
-          description: Found
+        '200':
+          description: OK
           content:
             application/json:
               schema:
@@ -874,8 +874,8 @@ paths:
       tags:
         - data
       responses:
-        '302':
-          description: Found
+        '200':
+          description: OK
           content:
             application/json:
               schema:
@@ -909,8 +909,8 @@ paths:
           name: env
       description: Retourne les informations correspondant à un theme.
       responses:
-        '302':
-          description: Found
+        '200':
+          description: OK
           content:
             application/json:
               schema:
