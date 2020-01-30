@@ -195,8 +195,13 @@ paths:
                     token_type: Bearer
                     expired_in: 3600
                     scope:
-                      - 'read:geosys'
-                      - 'write:geosys'
+                      - 'geosys:read'
+                      - 'geosys:write'
+                    theme:
+                      - hydro_50k
+                      - corint_250k
+                    equipe:
+                      - hydro
         '401':
           description: Unauthorized
           content:
@@ -969,6 +974,35 @@ paths:
               $ref: '#/components/schemas/usager'
       tags:
         - securite
+  '/suivi-prod/unite-travail/id/theme/actif/{theme}':
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_liste_valeur'
+              examples:
+                exListeIDThemeActif_01:
+                  value:
+                    value:
+                      - corint_50k_123465453
+                      - corint_50k_555555555
+                      - corint_50k_777777777
+      operationId: get-suivi-prod-unite-travail-listeid-theme-actif
+      description: Retourne une liste de ID des unités de travail active selon un thème.
+      security:
+        - geosys_auth:
+            - read
+    parameters:
+      - schema:
+          type: string
+        name: theme
+        in: path
+        required: true
 components:
   schemas:
     message_erreur:
@@ -1364,6 +1398,23 @@ components:
         expires_in:
           type: integer
         scope:
+          type: array
+          items:
+            type: string
+        theme:
+          type: array
+          items:
+            type: string
+        equipe:
+          type: array
+          items:
+            type: string
+      x-examples: {}
+    general_liste_valeur:
+      title: general_liste_valeur
+      type: object
+      properties:
+        value:
           type: array
           items:
             type: string
