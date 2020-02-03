@@ -17,7 +17,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
       parameters:
         - schema:
             type: string
@@ -40,19 +40,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
         '400':
           description: Bad Request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_erreur'
+                $ref: '#/components/schemas/general_message'
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_erreur'
+                $ref: '#/components/schemas/general_message'
       parameters:
         - schema:
             type: string
@@ -77,13 +77,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_erreur'
+                $ref: '#/components/schemas/general_message'
       requestBody:
         content:
           application/octet-stream:
@@ -121,13 +121,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_erreur'
+                $ref: '#/components/schemas/general_message'
         '404':
           description: Not Found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_erreur'
+                $ref: '#/components/schemas/general_message'
       parameters:
         - schema:
             type: string
@@ -150,7 +150,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
         '401':
           description: Unauthorized
           content:
@@ -288,7 +288,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_erreur'
+                $ref: '#/components/schemas/general_message'
       parameters:
         - schema:
             type: string
@@ -340,7 +340,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_erreur'
+                $ref: '#/components/schemas/general_message'
       description: Obtient un enregistrement de la table suivi_prod.list_codes.
       operationId: get-suivi-prod-code_list
       parameters:
@@ -375,13 +375,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_erreur'
+                $ref: '#/components/schemas/general_message'
         '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_erreur'
+                $ref: '#/components/schemas/general_message'
       parameters:
         - schema:
             type: boolean
@@ -413,7 +413,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
       operationId: delete-suivi-prod-unite-travail-id
       description: Delete a record in table unite_travail_2.
       tags:
@@ -430,7 +430,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
       description: Update a record in unite_travail_2 table.
       requestBody:
         content:
@@ -452,7 +452,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
       description: Insert a new record in unite_travail_2
       operationId: post-suivi-prod-unite-travail
       requestBody:
@@ -502,7 +502,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
       description: Delete one record from feature_type table.
       tags:
         - suivi-prod
@@ -519,7 +519,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
       description: Insert feature class inside feature_type table.
       requestBody:
         content:
@@ -578,7 +578,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
       description: Delete a record in Lot table.
       tags:
         - suivi-prod
@@ -594,7 +594,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
       description: Update a record in Lot table.
       requestBody:
         content:
@@ -617,7 +617,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
       description: Insert a record in Lot table.
       requestBody:
         content:
@@ -663,7 +663,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
       description: Delete a record in etape_ut table.
       tags:
         - suivi-prod
@@ -679,7 +679,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
       description: Update a record in etape_ut table.
       requestBody:
         content:
@@ -702,7 +702,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
       description: Insert a new record in etape_ut table.
       requestBody:
         content:
@@ -725,7 +725,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
       description: Service intégrateur pour la création de métadonnées dans GeoSys.
       tags:
         - geosys
@@ -747,7 +747,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
       description: "Service intégrateur pour la validation d'un fichier de métadonnées."
       tags:
         - geosys
@@ -770,19 +770,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_erreur'
+                $ref: '#/components/schemas/general_message'
         '404':
           description: Not Found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_erreur'
+                $ref: '#/components/schemas/general_message'
       tags:
         - securite
       security:
@@ -803,13 +803,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_erreur'
+                $ref: '#/components/schemas/general_message'
       security:
         - geosys_auth:
             - admin
@@ -866,7 +866,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
       tags:
         - data
       security:
@@ -884,7 +884,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
       operationId: get-geodata
       description: Extraction de donnée à sens unique. La donnée extraite ne reviendra pas.
       requestBody:
@@ -892,6 +892,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/geodata_lecture'
+        description: ''
       security:
         - geosys_auth:
             - read
@@ -933,7 +934,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
       description: "Service intégrateur permettant la création, selon un thème, d'un lot et d'une unité de travail en un seul appel."
       requestBody:
         content:
@@ -956,13 +957,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_succes'
+                $ref: '#/components/schemas/general_message'
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/message_erreur'
+                $ref: '#/components/schemas/general_message'
       description: "Ajouter un nouvel usager de l'API GeoSys."
       security:
         - geosys_auth:
@@ -977,7 +978,8 @@ paths:
   '/suivi-prod/unite-travail/id/theme/actif/{theme}':
     get:
       summary: Your GET endpoint
-      tags: []
+      tags:
+        - suivi-prod
       responses:
         '200':
           description: OK
@@ -1017,12 +1019,10 @@ components:
     message_succes:
       title: message_succes
       type: object
+      x-examples: {}
       properties:
         value:
           type: string
-      required:
-        - value
-      x-examples: {}
     suivi_prod-unite_travail_2-no_rel:
       title: suivi_prod-unite_travail_2-no_rel
       type: object
@@ -1033,7 +1033,7 @@ components:
           type: string
         dt_m:
           type: string
-        id:
+        id_ut:
           type: string
         id_lot:
           type: string
@@ -1055,7 +1055,7 @@ components:
           type: string
         dt_m:
           type: string
-        id:
+        id_lot:
           type: string
         operateur:
           type: string
@@ -1072,6 +1072,7 @@ components:
     suivi_prod-featuretype:
       title: suivi_prod-featuretype
       type: object
+      description: ''
       properties:
         etampe:
           type: string
@@ -1079,13 +1080,12 @@ components:
           type: string
         dt_m:
           type: string
-        id:
+        id_lot:
           type: string
         local_name:
           type: string
         spatial_repres_type_pna:
           type: integer
-      description: ''
     suivi_prod-code:
       title: suivi_prod-code
       type: object
@@ -1124,7 +1124,7 @@ components:
           type: string
         id:
           type: string
-        id_unite_travail:
+        id_ut:
           type: string
         nom_etape_cl:
           type: integer
@@ -1166,9 +1166,9 @@ components:
           type: string
         dt_m:
           type: string
-        id:
+        id_lot:
           type: string
-        id_unite_travail:
+        id_ut:
           type: string
         date_prevue_fin:
           type: string
@@ -1237,7 +1237,7 @@ components:
           type: string
         id:
           type: string
-        id_unite_travail:
+        id_ut:
           type: string
         nom_etape_cl:
           type: integer
@@ -1290,7 +1290,7 @@ components:
           type: string
         theme:
           type: string
-        id_lot:
+        id_ut:
           type: string
         clip:
           type: string
@@ -1327,7 +1327,15 @@ components:
           type: string
         theme:
           type: string
-        id_lot:
+        id_ut:
+          type: string
+        type_travail:
+          type: string
+        liste_classes:
+          type: array
+          items:
+            type: string
+        date_fin_prevue:
           type: string
         where_clause:
           type: string
@@ -1418,6 +1426,12 @@ components:
           type: array
           items:
             type: string
+    general_message:
+      title: general_message
+      type: object
+      properties:
+        message:
+          type: string
   securitySchemes:
     geosys_auth:
       flows:
