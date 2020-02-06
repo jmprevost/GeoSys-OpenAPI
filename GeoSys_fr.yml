@@ -247,17 +247,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/systeme_ress_retour'
+              examples:
+                exSystemeRessourceOutput_01:
+                  value:
+                    value:
+                      liste_classe:
+                        - waterbody_2
+                        - water_linear_flow_1
+                        - dam_2
       requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/systeme_ress_requete'
+            examples:
+              exSystemeRessourceInput_01:
+                value:
+                  fichiers:
+                    - 'hydro_50k:ress_hydro.json'
+                    - 'general:ress.json'
+                  chemin_recherche:
+                    - ressources/liste_classes
       description: "Retourne une ressource (paramètre ou un groupe de paramètres) à partir d'une liste de fichier."
       tags:
         - systeme
       security:
         - geosys_auth:
             - read
+      parameters:
+        - schema:
+            type: string
+          in: header
+          name: env
   /suivi-prod/codes:
     get:
       summary: ''
@@ -840,6 +861,11 @@ paths:
       security:
         - geosys_auth:
             - write
+      parameters:
+        - schema:
+            type: string
+          in: header
+          name: env_app
     put:
       summary: ''
       operationId: 'put-geodata-{identifiant}'
@@ -857,6 +883,11 @@ paths:
       security:
         - geosys_auth:
             - write
+      parameters:
+        - schema:
+            type: string
+          in: header
+          name: env_app
     get:
       summary: ''
       operationId: get-geodata-identifiant
@@ -873,6 +904,12 @@ paths:
         - geosys_auth:
             - read
             - write
+      description: ''
+      parameters:
+        - schema:
+            type: string
+          in: header
+          name: env_app
   /geodata:
     get:
       summary: ''
@@ -896,34 +933,11 @@ paths:
       security:
         - geosys_auth:
             - read
-  '/systeme/ressources/{theme}':
-    parameters:
-      - schema:
-          type: string
-        name: theme
-        in: path
-        required: true
-    get:
-      summary: ''
-      tags:
-        - systeme
-      operationId: get-systeme-ressources-theme
       parameters:
         - schema:
             type: string
-          in: query
-          name: env
-      description: Retourne les informations correspondant à un theme.
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/systeme_ress_retour'
-      security:
-        - geosys_auth:
-            - read
+          in: header
+          name: env_app
   /suivi-prod/planification:
     post:
       summary: ''
@@ -1005,6 +1019,73 @@ paths:
         name: theme
         in: path
         required: true
+  '/suivi-prod/type-travail/theme/{theme}':
+    get:
+      summary: Your GET endpoint
+      tags:
+        - suivi-prod
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/suivi_prod-code'
+              examples:
+                exTypeTravailTheme_01:
+                  value:
+                    - id: 10801
+                      id_liste_code: 10800
+                      nom: RFN_50K_CREATION
+                      desc_en: id aute do commodo
+                      desc_fr: culpa anim
+                    - id: 10802
+                      id_liste_code: 10800
+                      nom: RFN_50K_MAJ
+                      desc_en: fugiat
+                      desc_fr: fugiat
+                    - id: 10803
+                      id_liste_code: 10800
+                      nom: RFN_50K_CORRECTION
+                      desc_en: et dolore eiusmod nostrud
+                      desc_fr: aute dolor
+      operationId: get-suivi-prod-type-travail-theme
+      description: Retourne une liste des travaux disponibles pour un thème donné.
+      security:
+        - geosys_auth:
+            - read
+    parameters:
+      - schema:
+          type: string
+        name: theme
+        in: path
+        required: true
+  /systeme/envs:
+    get:
+      summary: Your GET endpoint
+      tags:
+        - systeme
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_liste_valeur'
+              examples:
+                exSystemeEnv_01:
+                  value:
+                    value:
+                      - DEV
+                      - TST
+                      - PRO
+      operationId: get-systeme-envs
+      description: Retourne la liste des environnements existant dans le système Geosys.
+      security:
+        - geosys_auth:
+            - read
 components:
   schemas:
     message_erreur:
@@ -1286,8 +1367,6 @@ components:
       type: object
       description: ''
       properties:
-        env:
-          type: string
         theme:
           type: string
         id_ut:
@@ -1305,7 +1384,7 @@ components:
       title: systeme_ress_retour
       type: object
       properties:
-        valeur:
+        value:
           type: object
     systeme_ress_requete:
       title: systeme_ress_requete
@@ -1323,8 +1402,6 @@ components:
       title: suivi_prod_planification
       type: object
       properties:
-        env:
-          type: string
         theme:
           type: string
         id_ut:
@@ -1345,8 +1422,6 @@ components:
       title: metadata_creation
       type: object
       properties:
-        env:
-          type: string
         theme:
           type: string
         id_ut:
@@ -1375,7 +1450,6 @@ components:
           items:
             type: string
       required:
-        - env
         - theme
         - id_ut
         - nom_catalogue
@@ -1384,8 +1458,6 @@ components:
       title: metadata_validation
       type: object
       properties:
-        env:
-          type: string
         theme:
           type: string
         id_ut:
