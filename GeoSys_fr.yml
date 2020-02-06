@@ -1073,14 +1073,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/general_liste_valeur'
+                $ref: '#/components/schemas/systeme_envs'
               examples:
                 exSystemeEnv_01:
                   value:
-                    value:
-                      - DEV
-                      - TST
-                      - PRO
+                    - env: PRO
+                      url: 'http://127.0.0.1:4010/pro/'
+                    - env: TST
+                      url: 'http://127.0.0.1:4010/tst/'
+                    - env: DEV
+                      url: 'http://127.0.0.1:4010/dev/'
       operationId: get-systeme-envs
       description: Retourne la liste des environnements existant dans le système Geosys.
       security:
@@ -1504,6 +1506,16 @@ components:
       properties:
         message:
           type: string
+    systeme_envs:
+      title: systeme_envs
+      type: array
+      items:
+        type: object
+        properties:
+          env:
+            type: string
+          url:
+            type: string
   securitySchemes:
     geosys_auth:
       flows:
