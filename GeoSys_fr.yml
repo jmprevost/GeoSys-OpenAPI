@@ -850,6 +850,10 @@ paths:
       responses:
         '201':
           description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
       requestBody:
         content:
           application/json:
@@ -872,6 +876,10 @@ paths:
       responses:
         '202':
           description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
       requestBody:
         content:
           application/json:
@@ -1064,7 +1072,7 @@ paths:
         required: true
   /systeme/envs:
     get:
-      summary: Your GET endpoint
+      summary: ''
       tags:
         - systeme
       responses:
@@ -1093,12 +1101,10 @@ components:
     message_erreur:
       title: message_erreur
       type: object
+      x-examples: {}
       properties:
-        code:
-          type: string
         message:
           type: string
-      x-examples: {}
     message_succes:
       title: message_succes
       type: object
