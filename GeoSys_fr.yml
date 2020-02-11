@@ -1377,8 +1377,10 @@ components:
       properties:
         theme:
           type: string
-        id_ut:
-          type: string
+        liste_classes:
+          type: array
+          items:
+            type: string
         clip:
           type: string
           enum:
