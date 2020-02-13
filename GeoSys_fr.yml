@@ -856,7 +856,7 @@ paths:
                 $ref: '#/components/schemas/general_message'
       requestBody:
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/geodata_edition'
         description: ''
@@ -1128,7 +1128,9 @@ components:
           type: string
         date_prevue_fin:
           type: string
-        date_debut_fin:
+        date_debut:
+          type: string
+        date_fin:
           type: string
         where_clause:
           type: string
@@ -1368,8 +1370,12 @@ components:
       title: geodata_edition
       type: object
       properties:
-        fichier:
+        fichier_data:
           type: string
+          format: binary
+        fichier_meta:
+          type: string
+          format: binary
     geodata_lecture:
       title: geodata_lecture
       type: object
