@@ -1096,6 +1096,28 @@ paths:
       security:
         - geosys_auth:
             - read
+  '/suivi-prod/codes/{code}':
+    parameters:
+      - schema:
+          type: string
+        name: code
+        in: path
+        required: true
+    get:
+      summary: ''
+      tags:
+        - suivi-prod
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/suivi_prod-code'
+      operationId: get-suivi-prod-codes-code
+      security:
+        - geosys_auth:
+            - read
 components:
   schemas:
     message_erreur:
@@ -1486,6 +1508,7 @@ components:
     securite_reponse_login:
       title: securite_reponse_login
       type: object
+      x-examples: {}
       properties:
         access_token:
           type: string
@@ -1505,7 +1528,6 @@ components:
           type: array
           items:
             type: string
-      x-examples: {}
     general_liste_valeur:
       title: general_liste_valeur
       type: object
