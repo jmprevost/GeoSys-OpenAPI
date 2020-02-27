@@ -1118,6 +1118,46 @@ paths:
       security:
         - geosys_auth:
             - read
+  /systeme/liste-contenants-fichiers:
+    get:
+      summary: ''
+      tags:
+        - systeme
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/systeme_liste_contenants_fichiers'
+              examples:
+                exListeContenantsFichiers_01:
+                  value:
+                    list_file:
+                      - name: test.py
+                        size: 15638
+                        last_modified: 2020/10/02
+                      - name: hello1.ts
+                        size: '2845'
+                        last_modified: 2019/11/05
+                    list_folder:
+                      - name: first
+                        last_modified: 2019/01/05
+                      - name: second
+                        last_modified: 2020/02/15
+                      - name: third
+                        last_modified: 2019/09/11
+      operationId: get-systeme-liste-contenants-fichiers
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: contenant_url
+          required: true
+      security:
+        - geosys_auth:
+            - read
+      description: Renvoi la liste des fichiers et répertoires existants sous un URL donné dans Amazon S3.
 components:
   schemas:
     message_erreur:
@@ -1552,6 +1592,30 @@ components:
             type: string
           url:
             type: string
+    systeme_liste_contenants_fichiers:
+      title: systeme_liste_contenants_fichiers
+      type: object
+      properties:
+        list_file:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              size:
+                type: integer
+              last_modified:
+                type: string
+        list_folder:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              last_modified:
+                type: string
   securitySchemes:
     geosys_auth:
       flows:
