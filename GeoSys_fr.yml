@@ -872,7 +872,7 @@ paths:
           name: env_app
     put:
       summary: ''
-      operationId: 'put-geodata-{identifiant}'
+      operationId: put-geodata-identifiant
       responses:
         '202':
           description: Accepted
@@ -882,7 +882,7 @@ paths:
                 $ref: '#/components/schemas/general_message'
       requestBody:
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/geodata_edition'
         description: ''
@@ -1158,6 +1158,105 @@ paths:
         - geosys_auth:
             - read
       description: Renvoi la liste des fichiers et répertoires existants sous un URL donné dans Amazon S3.
+  /suivi-prod/requete-bd:
+    get:
+      summary: ''
+      tags:
+        - suivi-prod
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                exSuiviProdRequeteBD_JSON:
+                  value:
+                    RecordCollection:
+                      - id_ut: AUTO_BUILDING_20181211_LCOUNTY
+                        nom: AUTO_BUILDING
+                        theme_cl: 10302
+                        statut_lot_cl: 10003
+                        id: AUTO_BUILDING_20181211_LCOUNTY_LOT
+                      - id_ut: AUTO_BUILDING_20181211_NBDNR16
+                        nom: AUTO_BUILDING
+                        theme_cl: 10302
+                        statut_lot_cl: 10003
+                        id: AUTO_BUILDING_20181211_NBDNR16_LOT
+                exSuiviProdRequeteBD_GeoJSON:
+                  value:
+                    type: FeatureCollection
+                    features:
+                      - geometry:
+                          crs:
+                            type: name
+                            properties:
+                              name: 'EPSG:4617'
+                          type: Polygon
+                          coordinates:
+                            - - - -79.850741
+                                - 44.0401375
+                              - - -79.8418541
+                                - 44.0401375
+                              - - -79.8418541
+                                - 44.0446443
+                              - - -79.850741
+                                - 44.0446443
+                              - - -79.850741
+                                - 44.0401375
+                        type: Feature
+                        properties:
+                          id_ut: CORINT_50K_20180710_CTR3
+                          nom: CORINT_50K
+                          theme_cl: 10303
+                          statut_lot_cl: 10003
+                          id: CORINT_50K_20180710_CTR3_LOT
+                      - geometry:
+                          crs:
+                            type: name
+                            properties:
+                              name: 'EPSG:4617'
+                          type: Polygon
+                          coordinates:
+                            - - - -133.0840712
+                                - 53.7702891
+                              - - -133.0766354
+                                - 53.7702891
+                              - - -133.0766354
+                                - 53.7746019
+                              - - -133.0840712
+                                - 53.7746019
+                              - - -133.0840712
+                                - 53.7702891
+                        type: Feature
+                        properties:
+                          id_ut: CORINT_50K_20190416_T_NPOSITION
+                          nom: CORINT_50K
+                          theme_cl: 10303
+                          statut_lot_cl: 10003
+                          id: CORINT_50K_20190416_T_NPOSITION_LOT
+      operationId: get-suivi-prod-requete-bd
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - json
+              - geojson
+            default: json
+          in: query
+          name: output_format
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suiv_prod-requete_sql'
+          application/xml:
+            schema:
+              type: object
+              properties: {}
+        description: ''
+      description: Permet de lancer une requete SQL au suivi de production et recevoir un JSON ou GeoJSON.
 components:
   schemas:
     message_erreur:
@@ -1616,6 +1715,13 @@ components:
                 type: string
               last_modified:
                 type: string
+    suiv_prod-requete_sql:
+      title: suivi_prod-requete_sql
+      type: object
+      properties:
+        sql:
+          type: string
+      description: ''
   securitySchemes:
     geosys_auth:
       flows:
