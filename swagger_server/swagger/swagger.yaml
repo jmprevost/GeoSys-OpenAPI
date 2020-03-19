@@ -1,0 +1,1983 @@
+openapi: 3.0.1
+info:
+  title: geosys-api
+  description: API permettant d'interagir avec GeoSys.
+  contact:
+    name: Geobase
+  version: "1.0"
+servers:
+- url: http://localhost:8080/geosys-api/v1
+paths:
+  /systeme/contenants:
+    post:
+      tags:
+      - systeme
+      description: Création d'un contenant (bucket) pour le stockage de fichiers.
+      operationId: post_systeme_contenants
+      parameters:
+      - name: contenant_url
+        in: query
+        description: URL identifiant le contenant.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - write
+      x-openapi-router-controller: swagger_server.controllers.systeme_controller
+    delete:
+      tags:
+      - systeme
+      description: Efface un contenant (bucket) et les fichiers qu'il contient.
+      operationId: delete_systeme_contenants
+      parameters:
+      - name: contenant_url
+        in: query
+        description: URL identifiant le contenant.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - delete
+      x-openapi-router-controller: swagger_server.controllers.systeme_controller
+  /systeme/fichiers:
+    get:
+      tags:
+      - systeme
+      description: Récupère un fichier
+      operationId: get_systeme_fichier
+      parameters:
+      - name: fichier_url
+        in: query
+        description: Chemin complet du fichier.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                description: Downloaded file as a stream of octet.
+                format: binary
+                x-content-type: application/octet-stream
+              examples: {}
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - read
+      x-openapi-router-controller: swagger_server.controllers.systeme_controller
+    post:
+      tags:
+      - systeme
+      description: Téléverser un fichier.
+      operationId: post_systeme_fichier
+      parameters:
+      - name: fichier_url
+        in: query
+        description: Chemin complet du fichier.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - write
+      x-openapi-router-controller: swagger_server.controllers.systeme_controller
+    delete:
+      tags:
+      - systeme
+      description: Efface un fichier.
+      operationId: delete_systeme_fichier
+      parameters:
+      - name: fichier_url
+        in: query
+        description: Chemin complet du fichier.
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnValueBasicErrorMessage'
+      security:
+      - geosys_auth:
+        - delete
+      x-openapi-router-controller: swagger_server.controllers.systeme_controller
+  /securite/login:
+    get:
+      tags:
+      - securite
+      description: Valide un usager et retourne un jeton (token).
+      operationId: get_securite_login
+      parameters:
+      - name: usager
+        in: header
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: mot_de_passe
+        in: header
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: duree_token
+        in: header
+        description: Dur�e de vie du token en secondes.
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/securite_reponse_login'
+              examples:
+                exTokenReturn:
+                  value:
+                    access_token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE1NzUzMDkxMzAsIm5iZiI6MTU3NTMwOTEzMSwiZXhwIjoxNTc1MzA5MTM1LCJpc3MiOiJOUkNhbiIsInNjb3BlIjoiZ2Vvc3lzOmFkbWluIGdlb3N5czp3cml0ZSBnZW9zeXM6cmVhZCJ9.eFCT0wxG06A7cWmXmLbP5__v-awiYAL_UFrqwVNbdkY
+                    token_type: Bearer
+                    expired_in: 3600
+                    scope:
+                    - geosys:read
+                    - geosys:write
+                    theme:
+                    - hydro_50k
+                    - corint_250k
+                    equipe:
+                    - hydro
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnValueBasicErrorMessage'
+      x-openapi-router-controller: swagger_server.controllers.securite_controller
+  /systeme/ressources:
+    get:
+      tags:
+      - systeme
+      description: Retourne une ressource (paramètre ou un groupe de paramètres) à
+        partir d'une liste de fichier.
+      operationId: get_systeme_ressources
+      parameters:
+      - name: env
+        in: header
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/systeme_ress_requete'
+            examples:
+              exSystemeRessourceInput_01:
+                value:
+                  fichiers:
+                  - hydro_50k:ress_hydro.json
+                  - general:ress.json
+                  chemin_recherche:
+                  - ressources/liste_classes
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/systeme_ress_retour'
+              examples:
+                exSystemeRessourceOutput_01:
+                  value:
+                    value:
+                      liste_classe:
+                      - waterbody_2
+                      - water_linear_flow_1
+                      - dam_2
+      security:
+      - geosys_auth:
+        - read
+      x-openapi-router-controller: swagger_server.controllers.systeme_controller
+  /suivi-prod/codes:
+    get:
+      tags:
+      - suivi-prod
+      description: Obtient un enregistrement de la table suivi_prod.code.
+      operationId: get_suivi_prod_codes
+      parameters:
+      - name: categorie
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - SPATIAL_REPRES_TYPE_PNA
+          - STATUT_LOT_CL
+          - STATUT_ETAPE_CL
+          - STATUT_CONTRACTANT_CL
+          - THEME_CL
+          - TYPE_TRAVAIL_CL
+          - NOM_ETAPE_CL
+          - CLASSE_ENTITE_CL
+      - name: nom
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: id
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: id_list_codes
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/suivi_prod-code'
+                x-content-type: application/json
+              examples:
+                exCodes_01:
+                  value:
+                  - id: 10303
+                    id_liste_code: 10300
+                    nom: CORINT_50K
+                    desc_en: Correcting 50K data in a specific region
+                    desc_fr: Correction des données 50K dans une région spécifique
+                  - id: 10304
+                    id_liste_code: 10300
+                    nom: CORINT_250K
+                    desc_en: Correcting 250K data in a specific region
+                    desc_fr: Correction des données 250K dans une région spécifique
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - read
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+  /suivi-prod/codelist:
+    get:
+      tags:
+      - suivi-prod
+      description: Obtient un enregistrement de la table suivi_prod.list_codes.
+      operationId: get_suivi_prod_code_list
+      parameters:
+      - name: id
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: nom
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/suivi_prod-code_list'
+                x-content-type: application/json
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - read
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+  /suivi-prod/unite-travail/{identifiant}:
+    get:
+      tags:
+      - suivi-prod
+      description: Retourne un enregistrement de la table suivi-prod.unite_travail_2.
+        En utilisant le paramètre full_relation=False vous obtener uniquement l'enregistrement
+        de la table suivi-prod.unite_travail_2. En utilisant le paramètre full_relation=True
+        vous obtenez l'enregistrement de la table suivi-prod.unite_travail_2 ainsi
+        que toutes ses dépendances (l'information provenant des tables en relation).
+      operationId: get_suivi_prod_unite_travail_id
+      parameters:
+      - name: identifiant
+        in: path
+        description: Work area id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: full_relation
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+          enum:
+          - true
+          - false
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - read
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+    put:
+      tags:
+      - suivi-prod
+      description: Update a record in unite_travail_2 table.
+      operationId: put_suivi_prod_unite_travail_id
+      parameters:
+      - name: identifiant
+        in: path
+        description: Work area id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Seulement les attributs non-null seront mise à jour. Le ID doit
+          toujours avoir une valeur car c'est la clef de recherche.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod-unite_travail_2-no_rel'
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - write
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+    delete:
+      tags:
+      - suivi-prod
+      description: Delete a record in table unite_travail_2.
+      operationId: delete_suivi_prod_unite_travail_id
+      parameters:
+      - name: identifiant
+        in: path
+        description: Work area id
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - delete
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+  /suivi-prod/unite-travail:
+    post:
+      tags:
+      - suivi-prod
+      description: Insert a new record in unite_travail_2
+      operationId: post_suivi_prod_unite_travail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod-unite_travail_2-no_rel'
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - write
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+  /suivi-prod/featuretype/{identifiant}:
+    get:
+      tags:
+      - suivi-prod
+      summary: Your GET endpoint
+      description: Retreive a record from feature)type table.
+      operationId: get_suivi_prod_featuretype_id
+      parameters:
+      - name: identifiant
+        in: path
+        description: ID from lot table
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/suivi_prod-featuretype'
+                x-content-type: application/json
+      security:
+      - geosys_auth:
+        - read
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+    delete:
+      tags:
+      - suivi-prod
+      description: Delete one record from feature_type table.
+      operationId: delete_suivi_prod_featuretype_id
+      parameters:
+      - name: identifiant
+        in: path
+        description: ID from lot table
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - delete
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+  /suivi-prod/featuretype:
+    post:
+      tags:
+      - suivi-prod
+      description: Insert feature class inside feature_type table.
+      operationId: post_suivi_prod_featuretype
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/suivi_prod-featuretype'
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - write
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+  /suivi-prod/lot/{identifiant}:
+    get:
+      tags:
+      - suivi-prod
+      description: Retrieve a record from Lot table. By using the parameter full_relation=False
+        you can retreive only the Lot record or by using full_relation=True you can
+        retreive the Lot and all its dependencies (related table records).
+      operationId: get_suivi_prod_lot_id
+      parameters:
+      - name: identifiant
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: full_relation
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          default: "false"
+          enum:
+          - "true"
+          - "false"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_1'
+      security:
+      - geosys_auth:
+        - read
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+    put:
+      tags:
+      - suivi-prod
+      description: Update a record in Lot table.
+      operationId: put_suivi_prod_lot_id
+      parameters:
+      - name: identifiant
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Only not null attributes in the JSON body will get updated. The
+          id must not be empty.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod-lot-no_rel'
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - write
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+    delete:
+      tags:
+      - suivi-prod
+      description: Delete a record in Lot table.
+      operationId: delete_suivi_prod_lot_id
+      parameters:
+      - name: identifiant
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - delete
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+  /suivi-prod/lot:
+    post:
+      tags:
+      - suivi-prod
+      description: Insert a record in Lot table.
+      operationId: post_suivi_prod_lot
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod-lot-no_rel'
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - write
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+  /suivi-prod/etape-ut/{identifiant}:
+    get:
+      tags:
+      - suivi-prod
+      summary: Your GET endpoint
+      description: Retrieve a record from etape_ut table.
+      operationId: get_suivi_prod_etape_ut_id
+      parameters:
+      - name: identifiant
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/suivi_prod-etape_ut'
+              examples: {}
+      security:
+      - geosys_auth:
+        - read
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+    put:
+      tags:
+      - suivi-prod
+      description: Update a record in etape_ut table.
+      operationId: put_suivi_prod_etape_ut_id
+      parameters:
+      - name: identifiant
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Only not null attributes in the JSON body will get updated. The
+          id must not be empty.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod-etape_ut'
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - write
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+    delete:
+      tags:
+      - suivi-prod
+      description: Delete a record in etape_ut table.
+      operationId: delete_suivi_prod_etape_ut_id
+      parameters:
+      - name: identifiant
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - delete
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+  /suivi-prod/etape-ut:
+    post:
+      tags:
+      - suivi-prod
+      description: Insert a new record in etape_ut table.
+      operationId: post_suivi_prod_etape_ut
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod-etape_ut'
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - write
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+  /geosys/creer-md:
+    post:
+      tags:
+      - geosys
+      description: Service intégrateur pour la création de métadonnées dans GeoSys.
+      operationId: post_geosys_creer_md
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/metadata_creation'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - write
+      x-openapi-router-controller: swagger_server.controllers.geosys_controller
+  /geosys/valider-md:
+    post:
+      tags:
+      - geosys
+      description: Service intégrateur pour la validation d'un fichier de métadonnées.
+      operationId: post_geosys_valider_md
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/metadata_validation'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - read
+      x-openapi-router-controller: swagger_server.controllers.geosys_controller
+  /securite/usager/{nom}:
+    get:
+      tags:
+      - securite
+      operationId: get_securite_usager_nom
+      parameters:
+      - name: nom
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - admin
+      x-openapi-router-controller: swagger_server.controllers.securite_controller
+    delete:
+      tags:
+      - securite
+      operationId: delete_securite_usager_nom
+      parameters:
+      - name: nom
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - admin
+      x-openapi-router-controller: swagger_server.controllers.securite_controller
+  /geodata/{identifiant}:
+    get:
+      tags:
+      - data
+      operationId: get_geodata_identifiant
+      parameters:
+      - name: identifiant
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: env_app
+        in: header
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - read
+        - write
+      x-openapi-router-controller: swagger_server.controllers.data_controller
+    put:
+      tags:
+      - data
+      operationId: put_geodata_identifiant
+      parameters:
+      - name: identifiant
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: env_app
+        in: header
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/geodata_edition'
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - write
+      x-openapi-router-controller: swagger_server.controllers.data_controller
+    post:
+      tags:
+      - data
+      operationId: post_geodata_identifiant
+      parameters:
+      - name: identifiant
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: env_app
+        in: header
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/geodata_edition'
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - write
+      x-openapi-router-controller: swagger_server.controllers.data_controller
+  /geodata:
+    get:
+      tags:
+      - data
+      description: Extraction de donnée à sens unique. La donnée extraite ne reviendra
+        pas.
+      operationId: get_geodata
+      parameters:
+      - name: env_app
+        in: header
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/geodata_lecture'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - read
+      x-openapi-router-controller: swagger_server.controllers.data_controller
+  /suivi-prod/planification:
+    post:
+      tags:
+      - suivi-prod
+      description: Service intégrateur permettant la création, selon un thème, d'un
+        lot et d'une unité de travail en un seul appel.
+      operationId: post_suivi_prod_planification
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod_planification'
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - write
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+  /securite/usager:
+    post:
+      tags:
+      - securite
+      description: Ajouter un nouvel usager de l'API GeoSys.
+      operationId: post_securite_usager
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/usager'
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+      - geosys_auth:
+        - admin
+      x-openapi-router-controller: swagger_server.controllers.securite_controller
+  /suivi-prod/unite-travail/id/theme/actif/{theme}:
+    get:
+      tags:
+      - suivi-prod
+      summary: Your GET endpoint
+      description: Retourne une liste de ID des unités de travail active selon un
+        thème.
+      operationId: get_suivi_prod_unite_travail_listeid_theme_actif
+      parameters:
+      - name: theme
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_liste_valeur'
+              examples:
+                exListeIDThemeActif_01:
+                  value:
+                    value:
+                    - corint_50k_123465453
+                    - corint_50k_555555555
+                    - corint_50k_777777777
+      security:
+      - geosys_auth:
+        - read
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+  /suivi-prod/type-travail/theme/{theme}:
+    get:
+      tags:
+      - suivi-prod
+      summary: Your GET endpoint
+      description: Retourne une liste des travaux disponibles pour un thème donné.
+      operationId: get_suivi_prod_type_travail_theme
+      parameters:
+      - name: theme
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/suivi_prod-code'
+                x-content-type: application/json
+              examples:
+                exTypeTravailTheme_01:
+                  value:
+                  - id: 10801
+                    id_liste_code: 10800
+                    nom: RFN_50K_CREATION
+                    desc_en: id aute do commodo
+                    desc_fr: culpa anim
+                  - id: 10802
+                    id_liste_code: 10800
+                    nom: RFN_50K_MAJ
+                    desc_en: fugiat
+                    desc_fr: fugiat
+                  - id: 10803
+                    id_liste_code: 10800
+                    nom: RFN_50K_CORRECTION
+                    desc_en: et dolore eiusmod nostrud
+                    desc_fr: aute dolor
+      security:
+      - geosys_auth:
+        - read
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+  /systeme/envs:
+    get:
+      tags:
+      - systeme
+      description: Retourne la liste des environnements existant dans le système Geosys.
+      operationId: get_systeme_envs
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/systeme_envs'
+              examples:
+                exSystemeEnv_01:
+                  value:
+                  - env: PRO
+                    url: http://127.0.0.1:4010/pro/
+                  - env: TST
+                    url: http://127.0.0.1:4010/tst/
+                  - env: DEV
+                    url: http://127.0.0.1:4010/dev/
+      security:
+      - geosys_auth:
+        - read
+      x-openapi-router-controller: swagger_server.controllers.systeme_controller
+  /suivi-prod/codes/{code}:
+    get:
+      tags:
+      - suivi-prod
+      operationId: get_suivi_prod_codes_code
+      parameters:
+      - name: code
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/suivi_prod-code'
+      security:
+      - geosys_auth:
+        - read
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+  /systeme/liste-contenants-fichiers:
+    get:
+      tags:
+      - systeme
+      description: Renvoi la liste des fichiers et répertoires existants sous un URL
+        donné dans Amazon S3.
+      operationId: get_systeme_liste_contenants_fichiers
+      parameters:
+      - name: contenant_url
+        in: query
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/systeme_liste_contenants_fichiers'
+              examples:
+                exListeContenantsFichiers_01:
+                  value:
+                    list_file:
+                    - name: test.py
+                      size: 15638
+                      last_modified: 2020/10/02
+                    - name: hello1.ts
+                      size: "2845"
+                      last_modified: 2019/11/05
+                    list_folder:
+                    - name: first
+                      last_modified: 2019/01/05
+                    - name: second
+                      last_modified: 2020/02/15
+                    - name: third
+                      last_modified: 2019/09/11
+      security:
+      - geosys_auth:
+        - read
+      x-openapi-router-controller: swagger_server.controllers.systeme_controller
+  /suivi-prod/requete-bd:
+    get:
+      tags:
+      - suivi-prod
+      description: Permet de lancer une requete SQL au suivi de production et recevoir
+        un JSON ou GeoJSON.
+      operationId: get_suivi_prod_requete_bd
+      parameters:
+      - name: output_format
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          default: json
+          enum:
+          - json
+          - geojson
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suiv_prod-requete_sql'
+          application/xml:
+            schema:
+              type: object
+              properties: {}
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+              examples:
+                exSuiviProdRequeteBD_JSON:
+                  value:
+                    RecordCollection:
+                    - id_ut: AUTO_BUILDING_20181211_LCOUNTY
+                      nom: AUTO_BUILDING
+                      theme_cl: 10302
+                      statut_lot_cl: 10003
+                      id: AUTO_BUILDING_20181211_LCOUNTY_LOT
+                    - id_ut: AUTO_BUILDING_20181211_NBDNR16
+                      nom: AUTO_BUILDING
+                      theme_cl: 10302
+                      statut_lot_cl: 10003
+                      id: AUTO_BUILDING_20181211_NBDNR16_LOT
+                exSuiviProdRequeteBD_GeoJSON:
+                  value:
+                    type: FeatureCollection
+                    features:
+                    - geometry:
+                        crs:
+                          type: name
+                          properties:
+                            name: EPSG:4617
+                        type: Polygon
+                        coordinates:
+                        - - - -79.850741
+                            - 44.0401375
+                          - - -79.8418541
+                            - 44.0401375
+                          - - -79.8418541
+                            - 44.0446443
+                          - - -79.850741
+                            - 44.0446443
+                          - - -79.850741
+                            - 44.0401375
+                      type: Feature
+                      properties:
+                        id_ut: CORINT_50K_20180710_CTR3
+                        nom: CORINT_50K
+                        theme_cl: 10303
+                        statut_lot_cl: 10003
+                        id: CORINT_50K_20180710_CTR3_LOT
+                    - geometry:
+                        crs:
+                          type: name
+                          properties:
+                            name: EPSG:4617
+                        type: Polygon
+                        coordinates:
+                        - - - -133.0840712
+                            - 53.7702891
+                          - - -133.0766354
+                            - 53.7702891
+                          - - -133.0766354
+                            - 53.7746019
+                          - - -133.0840712
+                            - 53.7746019
+                          - - -133.0840712
+                            - 53.7702891
+                      type: Feature
+                      properties:
+                        id_ut: CORINT_50K_20190416_T_NPOSITION
+                        nom: CORINT_50K
+                        theme_cl: 10303
+                        statut_lot_cl: 10003
+                        id: CORINT_50K_20190416_T_NPOSITION_LOT
+      x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
+components:
+  schemas:
+    message_erreur:
+      title: message_erreur
+      type: object
+      properties:
+        message:
+          type: string
+      x-examples: {}
+    message_succes:
+      title: message_succes
+      type: object
+      properties:
+        value:
+          type: string
+      x-examples: {}
+    suivi_prod-unite_travail_2-no_rel:
+      title: suivi_prod-unite_travail_2-no_rel
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id_ut:
+          type: string
+        id_lot:
+          type: string
+        date_prevue_fin:
+          type: string
+        date_debut:
+          type: string
+        date_fin:
+          type: string
+        where_clause:
+          type: string
+        geom:
+          type: string
+    suivi_prod-lot-no_rel:
+      title: suivi_prod-lot-no_rel
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id_lot:
+          type: string
+        operateur:
+          type: string
+        date_debut:
+          type: string
+        date_fin:
+          type: string
+        theme_cl:
+          type: integer
+        type_travail_cl:
+          type: integer
+        statut_lot_cl:
+          type: integer
+    suivi_prod-featuretype:
+      title: suivi_prod-featuretype
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id_lot:
+          type: string
+        local_name:
+          type: string
+        spatial_repres_type_pna:
+          type: integer
+      example:
+        dt_m: dt_m
+        spatial_repres_type_pna: 0
+        id_lot: id_lot
+        etampe: etampe
+        dt_c: dt_c
+        local_name: local_name
+    suivi_prod-code:
+      title: suivi_prod-code
+      type: object
+      properties:
+        id:
+          type: integer
+        id_liste_code:
+          type: integer
+        nom:
+          type: string
+        desc_en:
+          type: string
+        desc_fr:
+          type: string
+      example:
+        desc_fr: desc_fr
+        id_liste_code: 6
+        id: 0
+        desc_en: desc_en
+        nom: nom
+    suivi_prod-code_list:
+      title: suivi_prod-code_list
+      type: object
+      properties:
+        id:
+          type: integer
+        nom:
+          type: string
+        desc_en:
+          type: string
+        desc_fr:
+          type: string
+      example:
+        desc_fr: desc_fr
+        id: 0
+        desc_en: desc_en
+        nom: nom
+    suivi_prod-etape_ut:
+      title: suivi_prod-etape_ut
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id:
+          type: string
+        id_ut:
+          type: string
+        nom_etape_cl:
+          type: integer
+        description:
+          type: string
+        operateur:
+          type: string
+        date_debut:
+          type: string
+        date_fin:
+          type: string
+        statut_etape_cl:
+          type: integer
+      example:
+        dt_m: dt_m
+        statut_etape_cl: 6
+        id_ut: id_ut
+        nom_etape_cl: 0
+        date_debut: date_debut
+        etampe: etampe
+        description: description
+        date_fin: date_fin
+        dt_c: dt_c
+        id: id
+        operateur: operateur
+    suivi_prod-executant:
+      title: suivi_prod-executant
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id:
+          type: string
+        id_contractant:
+          type: string
+        no_contrat:
+          type: string
+        prix_contrat:
+          type: number
+    suivi_prod-sous_unite_travail-no_rel:
+      title: suivi_prod-sous_unite_travail-no_rel
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id_lot:
+          type: string
+        id_ut:
+          type: string
+        date_prevue_fin:
+          type: string
+        date_debut:
+          type: string
+        date_fin:
+          type: string
+    suivi_prod-sous_unite_travail-full_rel:
+      title: suivi_prod-sous_unite_travail-full_rel
+      type: object
+      properties:
+        sous_unite_travail:
+          $ref: '#/components/schemas/suivi_prod-sous_unite_travail-no_rel'
+        relation:
+          $ref: '#/components/schemas/suivi_prodsous_unite_travailfull_rel_relation'
+    suivi_prod-unite_travail_2-full_rel:
+      title: suivi_prod-unite_travail_2-full_rel
+      type: object
+      properties:
+        unite_travail_2:
+          $ref: '#/components/schemas/suivi_prod-unite_travail_2-no_rel'
+        relation:
+          $ref: '#/components/schemas/suivi_produnite_travail_2full_rel_relation'
+    suivi_prod-lot-full_rel:
+      title: suivi_prod-lot-full_rel
+      type: object
+      properties:
+        lot:
+          $ref: '#/components/schemas/suivi_prod-lot-no_rel'
+        relation:
+          $ref: '#/components/schemas/suivi_prodlotfull_rel_relation'
+    suivi_prod-etape_sut:
+      title: suivi_prod-etape_sut
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id:
+          type: string
+        id_ut:
+          type: string
+        nom_etape_cl:
+          type: integer
+        description:
+          type: string
+        operateur:
+          type: string
+        date_debut:
+          type: string
+        date_fin:
+          type: string
+        statut_etape_cl:
+          type: integer
+        id_sous_unite_travail:
+          type: string
+    usager:
+      title: usager
+      type: object
+      properties:
+        nom:
+          type: string
+        mot_de_passe:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        equipes:
+          type: array
+          items:
+            type: string
+        themes:
+          type: array
+          items:
+            type: string
+        cle_aws_id:
+          type: string
+    geodata_edition:
+      title: geodata_edition
+      type: object
+      properties:
+        fichier_data:
+          type: string
+          format: binary
+        fichier_meta:
+          type: string
+          format: binary
+    geodata_lecture:
+      title: geodata_lecture
+      type: object
+      properties:
+        theme:
+          type: string
+        liste_classes:
+          type: array
+          items:
+            type: string
+        clip:
+          type: string
+          enum:
+          - oui
+          - non
+        where_clause:
+          type: string
+        geom:
+          type: string
+    systeme_ress_retour:
+      title: systeme_ress_retour
+      type: object
+      properties:
+        value:
+          type: object
+      example:
+        value: {}
+    systeme_ress_requete:
+      title: systeme_ress_requete
+      type: object
+      properties:
+        fichiers:
+          type: array
+          items:
+            type: string
+        chemin_recherche:
+          type: array
+          items:
+            type: string
+    suivi_prod_planification:
+      title: suivi_prod_planification
+      type: object
+      properties:
+        theme:
+          type: string
+        id_ut:
+          type: string
+        type_travail:
+          type: string
+        liste_classes:
+          type: array
+          items:
+            type: string
+        date_fin_prevue:
+          type: string
+        where_clause:
+          type: string
+        geom:
+          type: string
+    metadata_creation:
+      title: metadata_creation
+      required:
+      - id_ut
+      - nom_catalogue
+      - prod_desc
+      - theme
+      type: object
+      properties:
+        theme:
+          type: string
+        id_ut:
+          type: string
+        nom_catalogue:
+          type: string
+        prod_desc:
+          type: string
+        description_projet:
+          type: string
+        logfile:
+          type: string
+        liste_id_source:
+          maxItems: 8
+          type: array
+          items:
+            type: string
+        liste_id_precision:
+          maxItems: 3
+          type: array
+          items:
+            type: string
+        liste_id_contraintes_legales:
+          maxItems: 3
+          type: array
+          items:
+            type: string
+    metadata_validation:
+      title: metadata_validation
+      type: object
+      properties:
+        theme:
+          type: string
+        id_ut:
+          type: string
+        fichier_json:
+          type: string
+          format: binary
+        logfile:
+          type: string
+    securite_reponse_login:
+      title: securite_reponse_login
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+        expires_in:
+          type: integer
+        scope:
+          type: array
+          items:
+            type: string
+        theme:
+          type: array
+          items:
+            type: string
+        equipe:
+          type: array
+          items:
+            type: string
+      example:
+        access_token: access_token
+        scope:
+        - scope
+        - scope
+        theme:
+        - theme
+        - theme
+        token_type: token_type
+        expires_in: 0
+        equipe:
+        - equipe
+        - equipe
+      x-examples: {}
+    general_liste_valeur:
+      title: general_liste_valeur
+      type: object
+      properties:
+        value:
+          type: array
+          items:
+            type: string
+      example:
+        value:
+        - value
+        - value
+    general_message:
+      title: general_message
+      type: object
+      properties:
+        message:
+          type: string
+      example:
+        message: message
+    systeme_envs:
+      title: systeme_envs
+      type: array
+      items:
+        $ref: '#/components/schemas/systeme_envs_inner'
+    systeme_liste_contenants_fichiers:
+      title: systeme_liste_contenants_fichiers
+      type: object
+      properties:
+        list_file:
+          type: array
+          items:
+            $ref: '#/components/schemas/systeme_liste_contenants_fichiers_list_file'
+        list_folder:
+          type: array
+          items:
+            $ref: '#/components/schemas/systeme_liste_contenants_fichiers_list_folder'
+      example:
+        list_folder:
+        - name: name
+          last_modified: last_modified
+        - name: name
+          last_modified: last_modified
+        list_file:
+        - size: 0
+          name: name
+          last_modified: last_modified
+        - size: 0
+          name: name
+          last_modified: last_modified
+    suiv_prod-requete_sql:
+      title: suivi_prod-requete_sql
+      type: object
+      properties:
+        sql:
+          type: string
+    ReturnValueBasicErrorMessage:
+      title: ReturnValue-BasicErrorMessage
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+    inline_response_200:
+      oneOf:
+      - $ref: '#/components/schemas/suivi_prod-unite_travail_2-no_rel'
+      - $ref: '#/components/schemas/suivi_prod-unite_travail_2-full_rel'
+    inline_response_200_1:
+      oneOf:
+      - $ref: '#/components/schemas/suivi_prod-lot-full_rel'
+      - $ref: '#/components/schemas/suivi_prod-lot-no_rel'
+    suivi_prodsous_unite_travailfull_rel_relation:
+      type: object
+      properties:
+        etape_sut:
+          type: array
+          items:
+            $ref: '#/components/schemas/suivi_prod-etape_sut'
+    suivi_produnite_travail_2full_rel_relation:
+      type: object
+      properties:
+        etape_ut:
+          type: array
+          items:
+            $ref: '#/components/schemas/suivi_prod-etape_ut'
+        sous_unite_travail:
+          type: array
+          items:
+            $ref: '#/components/schemas/suivi_prod-sous_unite_travail-full_rel'
+    suivi_prodlotfull_rel_relation:
+      type: object
+      properties:
+        executant:
+          $ref: '#/components/schemas/suivi_prod-executant'
+        unite_travail_2:
+          type: array
+          items:
+            $ref: '#/components/schemas/suivi_prod-unite_travail_2-full_rel'
+        feature_type:
+          type: array
+          items:
+            $ref: '#/components/schemas/suivi_prod-featuretype'
+    systeme_envs_inner:
+      type: object
+      properties:
+        env:
+          type: string
+        url:
+          type: string
+      example:
+        env: env
+        url: url
+    systeme_liste_contenants_fichiers_list_file:
+      type: object
+      properties:
+        name:
+          type: string
+        size:
+          type: integer
+        last_modified:
+          type: string
+      example:
+        size: 0
+        name: name
+        last_modified: last_modified
+    systeme_liste_contenants_fichiers_list_folder:
+      type: object
+      properties:
+        name:
+          type: string
+        last_modified:
+          type: string
+      example:
+        name: name
+        last_modified: last_modified
+  securitySchemes:
+    geosys_auth:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: http://geosys/api/oauth/dialog
+          scopes:
+            write: Ajouter ou modifier l'information
+            read: Lire l'information
+            delete: Effacer l'information
+            admin: Tous les droits
+      x-tokenInfoFunc: swagger_server.controllers.authorization_controller.check_geosys_auth
+      x-scopeValidateFunc: swagger_server.controllers.authorization_controller.validate_scope_geosys_auth
+
