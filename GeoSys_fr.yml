@@ -1246,6 +1246,14 @@ paths:
             default: json
           in: query
           name: output_format
+        - schema:
+            type: boolean
+            enum:
+              - 'True'
+              - 'False'
+            default: 'True'
+          in: query
+          name: simplifier
       requestBody:
         content:
           application/json:

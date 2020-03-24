@@ -1,3 +1,4 @@
+
 import connexion
 import six
 
@@ -10,10 +11,12 @@ from swagger_server.models.systeme_ress_retour import SystemeRessRetour  # noqa:
 from swagger_server import util
 
 # Ajouter manuellement
-from swagger_server.config import db_view_session
+from swagger_server.controllers import utils_gapi
 from flask import jsonify, request
 from sqlalchemy.sql import text
 import json
+import boto3
+import os
 
 def delete_systeme_contenants(contenant_url):  # noqa: E501
     """delete_systeme_contenants
@@ -75,6 +78,34 @@ def get_systeme_liste_contenants_fichiers(contenant_url):  # noqa: E501
 
     :rtype: SystemeListeContenantsFichiers
     """
+
+    token_dict = utils_gapi.auth_header_to_dict(request.headers.get('Authorization'))
+
+    token_dict["aws_access"]["acces_id"]
+    token_dict["aws_access"]["acces_secret"]
+
+    s3_resource = boto3.resource(
+        "s3",
+        region_name = os.environ.get("GAPI_AWS_REGION"),
+        aws_access_key_id = token_dict["aws_access"]["acces_id"],
+        aws_secret_access_key = token_dict["aws_access"]["acces_secret"]
+    )
+
+    my_bucket = s3_resource.Bucket("mytestjmp")
+    #summaries = my_bucket.objects.all()
+
+    for obj in my_bucket.objects.all():
+        print(obj.key)
+    
+    print("*************")
+
+    for obj in my_bucket.objects.all():
+        subsrc = obj.Object()
+        print(obj.key, obj.storage_class, obj.last_modified,
+            subsrc.version_id, subsrc.metadata, obj.size)
+
+    print("*************")
+
     return 'do some magic!'
 
 
@@ -121,46 +152,5 @@ def post_systeme_fichier(fichier_url, body=None):  # noqa: E501
     :rtype: GeneralMessage
     """
     
-    requete = """select 
-                    lot.id, 
-                    lot.theme_cl, 
-                    code.nom, 
-                    lot.statut_lot_cl, 
-                    unite_travail_2.id as id_ut, 
-                    unite_travail_2.shape 
-                from 
-                    lot, 
-                    unite_travail_2,
-                    code 
-                where 
-                        lot.theme_cl = 10307 
-                    and lot.id = unite_travail_2.id_lot 
-                    and lot.theme_cl = code.id"""
-                    
-    sql_json_template="""SELECT 
-            COALESCE(json_agg(inputs), '[]'::json)
-               FROM (
-            ) inputs"""
-
-    sql_geojson_template = """SELECT jsonb_build_object( 
-            'type',     'FeatureCollection', 
-            'features', jsonb_agg(feature) 
-            ) 
-            FROM ( 
-            SELECT jsonb_build_object( 
-                'type',       'Feature', 
-                'geometry',   ST_AsGeoJSON(ST_Reverse(ST_Simplify(shape, 0.000005, True)),7,2)::json, 
-                'properties', to_jsonb(inputs) - 'shape' 
-            ) AS feature 
-            FROM (  {} 
-            ) inputs 
-            ) features"""
     
-    body_dict = json.loads(body.decode("utf-8"))
-    sql_geojson_template = sql_geojson_template.format(body_dict['sql'])
-    #print(sql_template)
-    row = db_view_session.execute(text(sql_geojson_template)).fetchone()    
-    #print (str(row[0]))
-
-    return jsonify(row[0]), 200
-    #return 'Do some magic!!!'
+    return 'Do some magic!!!'

@@ -1319,6 +1319,17 @@ paths:
           enum:
           - json
           - geojson
+      - name: simplifier
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: true
+          enum:
+          - true
+          - false
       requestBody:
         content:
           application/json:
