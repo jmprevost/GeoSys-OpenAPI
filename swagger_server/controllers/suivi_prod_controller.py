@@ -22,6 +22,8 @@ from swagger_server import util
 from flask import request, make_response
 from swagger_server.config import db
 from swagger_server.controllers import utils_gapi
+from swagger_server.controllers import utils_security
+from swagger_server.controllers import utils_postgis
 from swagger_server.db_models.suivi_prod_db_schema import *
 import uuid
 from flask import jsonify
@@ -127,7 +129,18 @@ def get_suivi_prod_codes_code(code):  # noqa: E501
 
     :rtype: SuiviProdCode
     """
-    return 'do some magic!'
+    # Requête dans la table de Code
+    try:
+        res = Code.query.filter(Code.id == code).one()
+        MASerializer = CodeSchema()
+        code_json = MASerializer.dump(res)
+    
+    except NoResultFound as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))
+    except MultipleResultsFound as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))
+    
+    return jsonify(code_json), 200
 
 
 def get_suivi_prod_etape_ut_id(identifiant):  # noqa: E501
@@ -285,7 +298,7 @@ def post_suivi_prod_etape_ut(body=None):  # noqa: E501
     try:
         body = SuiviProdEtapeUt.from_dict(body)  # noqa: E501
         
-        token_dict = utils_gapi.auth_header_to_dict(request.headers.get('Authorization'))
+        token_dict = utils_security.auth_header_to_dict(request.headers.get('Authorization'))
         date_auj = utils_gapi.date_now()
 
         e_ut = EtapeUt( etampe = "GAPI_"+token_dict["nom_usager"],
@@ -327,7 +340,7 @@ def post_suivi_prod_featuretype(body=None):  # noqa: E501
     try:
         body = [SuiviProdFeaturetype.from_dict(d) for d in body]
         
-        token_dict = utils_gapi.auth_header_to_dict(request.headers.get('Authorization'))
+        token_dict = utils_security.auth_header_to_dict(request.headers.get('Authorization'))
         date_auj = utils_gapi.date_now()
         out_mess = []
 
@@ -366,7 +379,7 @@ def post_suivi_prod_lot(body=None):  # noqa: E501
         #body = SuiviProdLotNoRel.from_dict(connexion.request.get_json())  # noqa: E501
         body = SuiviProdLotNoRel.from_dict(body)
         
-        token_dict = utils_gapi.auth_header_to_dict(request.headers.get('Authorization'))
+        token_dict = utils_security.auth_header_to_dict(request.headers.get('Authorization'))
         date_auj = utils_gapi.date_now()
         
         lot = Lot(  etampe = "GAPI_"+token_dict["nom_usager"],
@@ -403,7 +416,7 @@ def post_suivi_prod_planification(body=None):  # noqa: E501
     
     body = SuiviProdPlanification.from_dict(body)  # noqa: E501
     
-    token_dict = utils_gapi.auth_header_to_dict(request.headers.get('Authorization'))
+    token_dict = utils_security.auth_header_to_dict(request.headers.get('Authorization'))
     date_auj = utils_gapi.date_now()
     ident_lot = body.id_ut + "_LOT"
     out_mess = []
@@ -473,13 +486,13 @@ def post_suivi_prod_unite_travail(body=None):  # noqa: E501
     try:
         body = SuiviProdUniteTravail2NoRel.from_dict(body)  # noqa: E501
 
-        token_dict = utils_gapi.auth_header_to_dict(request.headers.get('Authorization'))
+        token_dict = utils_security.auth_header_to_dict(request.headers.get('Authorization'))
         
         # Validation et reprojection de la géométrie
-        body.geom = utils_gapi.validate_geometry(body.geom)
+        body.geom = utils_postgis.validate_geometry(body.geom)
 
         #conversion de la géométrie en EWKT
-        wkt = utils_gapi.convert_geojson_to_wkt(utils_gapi.validate_geometry(body.geom))
+        wkt = utils_postgis.convert_geojson_to_wkt(utils_postgis.validate_geometry(body.geom))
         wkt = "SRID={};{}".format(os.environ.get("GAPI_EPSG"), wkt)
 
         date_auj = utils_gapi.date_now()
@@ -520,7 +533,7 @@ def put_suivi_prod_etape_ut_id(identifiant, body=None):  # noqa: E501
     """
     
     try:
-        token_dict = utils_gapi.auth_header_to_dict(request.headers.get('Authorization'))
+        token_dict = utils_security.auth_header_to_dict(request.headers.get('Authorization'))
         date_auj = utils_gapi.date_now()
 
         rs = EtapeUt.query.filter(EtapeUt.id == identifiant).one()
@@ -561,7 +574,7 @@ def put_suivi_prod_lot_id(identifiant, body=None):  # noqa: E501
     """
 
     try:
-        token_dict = utils_gapi.auth_header_to_dict(request.headers.get('Authorization'))
+        token_dict = utils_security.auth_header_to_dict(request.headers.get('Authorization'))
         date_auj = utils_gapi.date_now()
 
         rs = Lot.query.filter(Lot.id == identifiant).one()
@@ -597,7 +610,7 @@ def put_suivi_prod_unite_travail_id(identifiant, body=None):  # noqa: E501
     :rtype: GeneralMessage
     """
     try:
-        token_dict = utils_gapi.auth_header_to_dict(request.headers.get('Authorization'))
+        token_dict = utils_security.auth_header_to_dict(request.headers.get('Authorization'))
         date_auj = utils_gapi.date_now()
 
         rs = UniteTravail2.query.filter(UniteTravail2.id == identifiant).one()

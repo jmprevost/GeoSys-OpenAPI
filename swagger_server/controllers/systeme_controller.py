@@ -6,17 +6,21 @@ from swagger_server.models.general_message import GeneralMessage  # noqa: E501
 from swagger_server.models.return_value_basic_error_message import ReturnValueBasicErrorMessage  # noqa: E501
 from swagger_server.models.systeme_envs import SystemeEnvs  # noqa: E501
 from swagger_server.models.systeme_liste_contenants_fichiers import SystemeListeContenantsFichiers  # noqa: E501
+from swagger_server.models.systeme_liste_contenants_fichiers_list_file import SystemeListeContenantsFichiersListFile  # noqa: F401,E501
+from swagger_server.models.systeme_liste_contenants_fichiers_list_folder import SystemeListeContenantsFichiersListFolder  # noqa: F401,E501
 from swagger_server.models.systeme_ress_requete import SystemeRessRequete  # noqa: E501
 from swagger_server.models.systeme_ress_retour import SystemeRessRetour  # noqa: E501
 from swagger_server import util
 
 # Ajouter manuellement
+from swagger_server.controllers import utils_s3
 from swagger_server.controllers import utils_gapi
-from flask import jsonify, request
+from flask import jsonify, request, Response
 from sqlalchemy.sql import text
 import json
 import boto3
 import os
+from werkzeug.utils import secure_filename
 
 def delete_systeme_contenants(contenant_url):  # noqa: E501
     """delete_systeme_contenants
@@ -65,7 +69,20 @@ def get_systeme_fichier(fichier_url):  # noqa: E501
 
     :rtype: str
     """
-    return 'do some magic!'
+    
+    s3_session = utils_s3.get_s3_session(fichier_url)
+    s3_client = s3_session.client("s3")
+
+    # Extraire le nom du fichier
+    parts = fichier_url.split("/")
+    nom_fichier = parts[len(parts)-1]
+
+    return Response(
+        utils_s3.get_s3_object(s3_client, fichier_url),
+        mimetype='application/octet-stream',
+        headers={"Content-Disposition": "attachment;filename={}".format(nom_fichier)}
+    )
+    
 
 
 def get_systeme_liste_contenants_fichiers(contenant_url):  # noqa: E501
@@ -78,35 +95,38 @@ def get_systeme_liste_contenants_fichiers(contenant_url):  # noqa: E501
 
     :rtype: SystemeListeContenantsFichiers
     """
+    s3_session = utils_s3.get_s3_session(contenant_url)
 
-    token_dict = utils_gapi.auth_header_to_dict(request.headers.get('Authorization'))
-
-    token_dict["aws_access"]["acces_id"]
-    token_dict["aws_access"]["acces_secret"]
-
-    s3_resource = boto3.resource(
-        "s3",
-        region_name = os.environ.get("GAPI_AWS_REGION"),
-        aws_access_key_id = token_dict["aws_access"]["acces_id"],
-        aws_secret_access_key = token_dict["aws_access"]["acces_secret"]
-    )
-
-    my_bucket = s3_resource.Bucket("mytestjmp")
-    #summaries = my_bucket.objects.all()
-
-    for obj in my_bucket.objects.all():
-        print(obj.key)
+    s3_client = s3_session.client("s3")
+    s3_ress = s3_session.resource("s3")
     
-    print("*************")
+    # Requête vers S3
+    result = s3_client.list_objects_v2(Bucket=os.environ.get("GAPI_AWS_S3_BUCKET_NAME"), Prefix=contenant_url, Delimiter='/')
+    
+    #Vérifie si le URL est bon
+    if result.get('KeyCount') == 0:
+        raise Exception(utils_gapi.message_erreur("Le URL: {} n'existe pas".format(contenant_url), 400))
+    
+    # Construction des listes des fichiers et des dossiers
+    file_list = []
+    folder_list = []
+    
+    if 'CommonPrefixes' in result: # S'il y a des dossiers
+        for d in result.get('CommonPrefixes'):
+            obj = s3_ress.Object(bucket_name=os.environ.get("GAPI_AWS_S3_BUCKET_NAME"), key=d.get('Prefix')) #Pour obtenir la date du dossier      
+            folder_list.append(SystemeListeContenantsFichiersListFolder(name = str(d.get('Prefix')).replace(contenant_url,"").rstrip("/"),
+                                                                        last_modified = utils_gapi.local_time_format(obj.last_modified)))
+        
+    if result.get('KeyCount') > 1: # S'il y a des fichiers
+        for d in result.get('Contents'):
+            if d["Key"] != contenant_url: #sinon on aura le nom du répertoire racine dans la liste
+                file_list.append(SystemeListeContenantsFichiersListFile(name = str(d["Key"]).replace(contenant_url,""), 
+                                                                        size = d["Size"], 
+                                                                        last_modified = utils_gapi.local_time_format(d["LastModified"])))
 
-    for obj in my_bucket.objects.all():
-        subsrc = obj.Object()
-        print(obj.key, obj.storage_class, obj.last_modified,
-            subsrc.version_id, subsrc.metadata, obj.size)
+    content_list = SystemeListeContenantsFichiers(list_file=file_list, list_folder=folder_list)
 
-    print("*************")
-
-    return 'do some magic!'
+    return jsonify(content_list.to_dict()), 200
 
 
 def get_systeme_ressources(body=None, env=None):  # noqa: E501
@@ -136,21 +156,26 @@ def post_systeme_contenants(contenant_url):  # noqa: E501
 
     :rtype: GeneralMessage
     """
-    return 'do some magic!'
+    ret = utils_s3.create_s3_object(contenant_url)
+
+    # Retour    
+    return jsonify(GeneralMessage(message=ret).to_dict()), 200
 
 
-def post_systeme_fichier(fichier_url, body=None):  # noqa: E501
+def post_systeme_fichier(contenant_url, fichier=None):  # noqa: E501
     """post_systeme_fichier
 
     Téléverser un fichier. # noqa: E501
 
-    :param fichier_url: Chemin complet du fichier.
-    :type fichier_url: str
-    :param body: 
-    :type body: dict | bytes
+    :param contenant_url: Chemin complet du fichier.
+    :type contenant_url: str
+    :param fichier: 
+    :type fichier: strstr
 
     :rtype: GeneralMessage
     """
     
-    
-    return 'Do some magic!!!'
+    ret = utils_s3.create_s3_object(contenant_url, fichier)
+
+    # Retour    
+    return jsonify(GeneralMessage(message=ret).to_dict()), 200
