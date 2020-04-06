@@ -18,11 +18,18 @@ os.environ["GAPI_PGIS_CONNECT_ADMIN_STRING"] = "postgresql://jmp_api:dev@v-she-o
 os.environ["GAPI_CRYPTO_ITERATION"] = "121394"
 os.environ["GAPI_CRYPTO_SALT"] = "GeoSys API salt for crypto!!!"
 os.environ["GAPI_JWT_ALGORITHM"] = "HS256"
+
 os.environ["GAPI_ENV"] = "DEV"
+
 os.environ["GAPI_EPSG"] = "4617"
 os.environ["GAPI_GEOJSON_MAX_DECIMAL"] = "7"
 os.environ["GAPI_GEOJSON_PGIS_OPTION"] = "2"
 os.environ["GAPI_GEOJSON_TOL_FILTRAGE"] = "0.000005"
+
+os.environ["GAPI_AWS_REGION"] = "ca-central-1"
+os.environ["GAPI_AWS_S3_BUCKET_NAME"] = "mytestjmp"
+os.environ["AWS_CA_BUNDLE"] = "D:\\GeoSys\\certificats\\NRCan-RootCA.cer" #il faudrait essayer de mettre le certificat dans le docker et ensuite donner son path
+os.environ["GAPI_AWS_S3_MULTI_PART_CHUNK_SIZE"] = "10485760"
 
 # Create the connexion application instance
 connex_app = connexion.App(__name__, specification_dir='./swagger/')
@@ -38,7 +45,7 @@ CORS(app)
 pgis_url = os.environ.get("GAPI_PGIS_CONNECT_ADMIN_STRING")
 
 # Configure the SqlAlchemy part of the app instance
-app.config["SQLALCHEMY_ECHO"] = False
+app.config["SQLALCHEMY_ECHO"] = False #À True, il permet de voir les requêtes SQL exécutées par SQLAlchemy
 app.config["SQLALCHEMY_DATABASE_URI"] = pgis_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["JSON_SORT_KEYS"] = False

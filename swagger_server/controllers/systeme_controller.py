@@ -1,3 +1,4 @@
+
 import connexion
 import six
 
@@ -5,15 +6,21 @@ from swagger_server.models.general_message import GeneralMessage  # noqa: E501
 from swagger_server.models.return_value_basic_error_message import ReturnValueBasicErrorMessage  # noqa: E501
 from swagger_server.models.systeme_envs import SystemeEnvs  # noqa: E501
 from swagger_server.models.systeme_liste_contenants_fichiers import SystemeListeContenantsFichiers  # noqa: E501
+from swagger_server.models.systeme_liste_contenants_fichiers_list_file import SystemeListeContenantsFichiersListFile  # noqa: F401,E501
+from swagger_server.models.systeme_liste_contenants_fichiers_list_folder import SystemeListeContenantsFichiersListFolder  # noqa: F401,E501
 from swagger_server.models.systeme_ress_requete import SystemeRessRequete  # noqa: E501
 from swagger_server.models.systeme_ress_retour import SystemeRessRetour  # noqa: E501
 from swagger_server import util
 
 # Ajouter manuellement
-from swagger_server.config import db_view_session
-from flask import jsonify, request
+from swagger_server.controllers import utils_s3
+from swagger_server.controllers import utils_gapi
+from flask import jsonify, request, Response
 from sqlalchemy.sql import text
 import json
+import boto3
+import os
+from werkzeug.utils import secure_filename
 
 def delete_systeme_contenants(contenant_url):  # noqa: E501
     """delete_systeme_contenants
@@ -62,7 +69,20 @@ def get_systeme_fichier(fichier_url):  # noqa: E501
 
     :rtype: str
     """
-    return 'do some magic!'
+    
+    s3_session = utils_s3.get_s3_session(fichier_url)
+    s3_client = s3_session.client("s3")
+
+    # Extraire le nom du fichier
+    parts = fichier_url.split("/")
+    nom_fichier = parts[len(parts)-1]
+
+    return Response(
+        utils_s3.get_s3_object(s3_client, fichier_url),
+        mimetype='application/octet-stream',
+        headers={"Content-Disposition": "attachment;filename={}".format(nom_fichier)}
+    )
+    
 
 
 def get_systeme_liste_contenants_fichiers(contenant_url):  # noqa: E501
@@ -75,7 +95,38 @@ def get_systeme_liste_contenants_fichiers(contenant_url):  # noqa: E501
 
     :rtype: SystemeListeContenantsFichiers
     """
-    return 'do some magic!'
+    s3_session = utils_s3.get_s3_session(contenant_url)
+
+    s3_client = s3_session.client("s3")
+    s3_ress = s3_session.resource("s3")
+    
+    # Requête vers S3
+    result = s3_client.list_objects_v2(Bucket=os.environ.get("GAPI_AWS_S3_BUCKET_NAME"), Prefix=contenant_url, Delimiter='/')
+    
+    #Vérifie si le URL est bon
+    if result.get('KeyCount') == 0:
+        raise Exception(utils_gapi.message_erreur("Le URL: {} n'existe pas".format(contenant_url), 400))
+    
+    # Construction des listes des fichiers et des dossiers
+    file_list = []
+    folder_list = []
+    
+    if 'CommonPrefixes' in result: # S'il y a des dossiers
+        for d in result.get('CommonPrefixes'):
+            obj = s3_ress.Object(bucket_name=os.environ.get("GAPI_AWS_S3_BUCKET_NAME"), key=d.get('Prefix')) #Pour obtenir la date du dossier      
+            folder_list.append(SystemeListeContenantsFichiersListFolder(name = str(d.get('Prefix')).replace(contenant_url,"").rstrip("/"),
+                                                                        last_modified = utils_gapi.local_time_format(obj.last_modified)))
+        
+    if result.get('KeyCount') > 1: # S'il y a des fichiers
+        for d in result.get('Contents'):
+            if d["Key"] != contenant_url: #sinon on aura le nom du répertoire racine dans la liste
+                file_list.append(SystemeListeContenantsFichiersListFile(name = str(d["Key"]).replace(contenant_url,""), 
+                                                                        size = d["Size"], 
+                                                                        last_modified = utils_gapi.local_time_format(d["LastModified"])))
+
+    content_list = SystemeListeContenantsFichiers(list_file=file_list, list_folder=folder_list)
+
+    return jsonify(content_list.to_dict()), 200
 
 
 def get_systeme_ressources(body=None, env=None):  # noqa: E501
@@ -105,62 +156,26 @@ def post_systeme_contenants(contenant_url):  # noqa: E501
 
     :rtype: GeneralMessage
     """
-    return 'do some magic!'
+    ret = utils_s3.create_s3_object(contenant_url)
+
+    # Retour    
+    return jsonify(GeneralMessage(message=ret).to_dict()), 200
 
 
-def post_systeme_fichier(fichier_url, body=None):  # noqa: E501
+def post_systeme_fichier(contenant_url, fichier=None):  # noqa: E501
     """post_systeme_fichier
 
     Téléverser un fichier. # noqa: E501
 
-    :param fichier_url: Chemin complet du fichier.
-    :type fichier_url: str
-    :param body: 
-    :type body: dict | bytes
+    :param contenant_url: Chemin complet du fichier.
+    :type contenant_url: str
+    :param fichier: 
+    :type fichier: strstr
 
     :rtype: GeneralMessage
     """
     
-    requete = """select 
-                    lot.id, 
-                    lot.theme_cl, 
-                    code.nom, 
-                    lot.statut_lot_cl, 
-                    unite_travail_2.id as id_ut, 
-                    unite_travail_2.shape 
-                from 
-                    lot, 
-                    unite_travail_2,
-                    code 
-                where 
-                        lot.theme_cl = 10307 
-                    and lot.id = unite_travail_2.id_lot 
-                    and lot.theme_cl = code.id"""
-                    
-    sql_json_template="""SELECT 
-            COALESCE(json_agg(inputs), '[]'::json)
-               FROM (
-            ) inputs"""
+    ret = utils_s3.create_s3_object(contenant_url, fichier)
 
-    sql_geojson_template = """SELECT jsonb_build_object( 
-            'type',     'FeatureCollection', 
-            'features', jsonb_agg(feature) 
-            ) 
-            FROM ( 
-            SELECT jsonb_build_object( 
-                'type',       'Feature', 
-                'geometry',   ST_AsGeoJSON(ST_Reverse(ST_Simplify(shape, 0.000005, True)),7,2)::json, 
-                'properties', to_jsonb(inputs) - 'shape' 
-            ) AS feature 
-            FROM (  {} 
-            ) inputs 
-            ) features"""
-    
-    body_dict = json.loads(body.decode("utf-8"))
-    sql_geojson_template = sql_geojson_template.format(body_dict['sql'])
-    #print(sql_template)
-    row = db_view_session.execute(text(sql_geojson_template)).fetchone()    
-    #print (str(row[0]))
-
-    return jsonify(row[0]), 200
-    #return 'Do some magic!!!'
+    # Retour    
+    return jsonify(GeneralMessage(message=ret).to_dict()), 200

@@ -9,6 +9,8 @@ from swagger_server.models.usager import Usager  # noqa: E501
 from swagger_server import util
 
 # Ajoute manuellement. Ne provient pas du generateur de code
+from swagger_server.controllers import utils_security
+from swagger_server.controllers import utils_gapi
 from swagger_server.config import db
 from swagger_server.db_models.suivi_prod_db_schema import *
 from swagger_server.db_models.api_db_schema import *
@@ -29,6 +31,7 @@ from cryptography.fernet import InvalidToken
 import jwt
 from datetime import datetime, timedelta
 
+"""
 def password_checker(pwd_clair, pwd_encrypt):
     pwd_clair = pwd_clair.encode()
     pwd_encrypt = pwd_encrypt.encode()
@@ -56,7 +59,7 @@ def password_checker(pwd_clair, pwd_encrypt):
 
     except InvalidToken:
         return False
-
+"""
 
 def delete_securite_usager_nom(nom):  # noqa: E501
     """delete_securite_usager_nom
@@ -104,7 +107,7 @@ def get_securite_login(usager=None, mot_de_passe=None, duree_token=None):  # noq
     
     # Validation du mot de passe obtenu de la BD
     encrypt_pwd = str(user_data['mot_de_passe'])
-    if not password_checker(mot_de_passe, encrypt_pwd):
+    if not utils_security.password_checker(mot_de_passe, encrypt_pwd):
         return GeneralMessage(message="Password not valid"), 400
 
     # Construction du Token
@@ -112,6 +115,11 @@ def get_securite_login(usager=None, mot_de_passe=None, duree_token=None):  # noq
     JWT_SECRET = os.environ.get("GAPI_CRYPTO_SALT")
     JWT_ALGORITHM = os.environ.get("GAPI_JWT_ALGORITHM")
     
+    #Aller chercher dans la BD les noms équivalent aux codes
+    theme_nom = utils_gapi.convert_code_to_name(user_data["theme"])
+    scope_nom = utils_gapi.convert_code_to_name(user_data["scope"])
+    equipes_nom = utils_gapi.convert_code_to_name(user_data["equipe"])
+
     payload = {
 	    "iat": datetime.utcnow(),
 	    "nbf": datetime.utcnow(),
@@ -119,9 +127,12 @@ def get_securite_login(usager=None, mot_de_passe=None, duree_token=None):  # noq
 	    "iss": "NRCan",
         "sub": "1234567890",
         "nom_usager": user_data["nom_usager"],
-	    "scope": user_data["scope"],        
+	    "scope": user_data["scope"],
+        "scope_nom": scope_nom,
         "theme": user_data["theme"],
+        "theme_nom": theme_nom,
         "equipes": user_data["equipe"],
+        "equipes_nom": equipes_nom,
         "aws_access": user_data["cle_aws"]
     }
 

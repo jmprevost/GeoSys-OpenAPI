@@ -22,6 +22,8 @@ from swagger_server import util
 from flask import request, make_response
 from swagger_server.config import db
 from swagger_server.controllers import utils_gapi
+from swagger_server.controllers import utils_security
+from swagger_server.controllers import utils_postgis
 from swagger_server.db_models.suivi_prod_db_schema import *
 import uuid
 from flask import jsonify
@@ -127,7 +129,18 @@ def get_suivi_prod_codes_code(code):  # noqa: E501
 
     :rtype: SuiviProdCode
     """
-    return 'do some magic!'
+    # Requête dans la table de Code
+    try:
+        res = Code.query.filter(Code.id == code).one()
+        MASerializer = CodeSchema()
+        code_json = MASerializer.dump(res)
+    
+    except NoResultFound as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))
+    except MultipleResultsFound as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))
+    
+    return jsonify(code_json), 200
 
 
 def get_suivi_prod_etape_ut_id(identifiant):  # noqa: E501
@@ -155,7 +168,7 @@ def get_suivi_prod_featuretype_id(identifiant):  # noqa: E501
     """
     return 'do some magic!'
 
-def get_suivi_prod_requete_bd(body=None, output_format=None):  # noqa: E501
+def get_suivi_prod_requete_bd(body=None, output_format=None, simplifier=None):  # noqa: E501
     """get_suivi_prod_requete_bd
 
     Permet de lancer une requete SQL au suivi de production et recevoir un JSON ou GeoJSON. # noqa: E501
@@ -167,47 +180,57 @@ def get_suivi_prod_requete_bd(body=None, output_format=None):  # noqa: E501
 
     :rtype: object
     """
-    if output_format == "json":
-        sql_template
-    elif output_format == "geojson":
-        sql_template = """SELECT jsonb_build_object( 
-            'type',     'FeatureCollection', 
-            'features', jsonb_agg(feature) 
-            ) 
-            FROM ( 
-            SELECT jsonb_build_object( 
-                'type',       'Feature', 
-                'geometry',   ST_AsGeoJSON(ST_Reverse(ST_Simplify(shape, 0.000005, True)),7,2)::json, 
-                'properties', to_jsonb(inputs) - 'shape' 
-            ) AS feature 
-            FROM (  {} 
-            ) inputs 
-            ) features"""
+    try:
+        # Lecture du body JSON qui contient la requête SQL
+        if connexion.request.is_json:
+            body = SuivProdRequeteSql.from_dict(connexion.request.get_json())  # noqa: E501
+        else:
+            raise ValueError("Le service attend un JSON valide contenant la requête")
+        
+        # Choix du template pour la requête JSON ou GeoJSON?
+        if output_format == "json":
+            sql_template = """SELECT jsonb_build_object( 
+                'RecordCollection', jsonb_agg(feature) 
+                ) 
+                FROM ( {} 
+                ) feature"""
+            
+            sql_template = sql_template.format(body.sql)
 
+        elif output_format == "geojson":
+            #TODO: Vérifier que l'attribut shape est présent. Ou bien chercher dans la requête l'attribut spatial
+            geom_attr_name = "shape"
 
-    
-    #body_dict = json.loads(body.decode("utf-8"))
+            sql_template = """SELECT jsonb_build_object( 
+                'type',     'FeatureCollection', 
+                'features', jsonb_agg(feature) 
+                ) 
+                FROM ( 
+                SELECT jsonb_build_object( 
+                    'type',       'Feature', 
+                    'geometry',   ST_AsGeoJSON(ST_Reverse({}),{},{})::json, 
+                    'properties', to_jsonb(inputs) - '{}' 
+                ) AS feature 
+                FROM (  {} 
+                ) inputs 
+                ) features"""
+            
+            if simplifier:
+                simplify_string = "ST_Simplify({}, {}, True)".format(geom_attr_name, os.environ.get("GAPI_GEOJSON_TOL_FILTRAGE"))
+            else:
+                simplify_string = geom_attr_name
 
-    if connexion.request.is_json:
-        body = SuivProdRequeteSql.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+            sql_template = sql_template.format(simplify_string, os.environ.get("GAPI_GEOJSON_MAX_DECIMAL"), os.environ.get("GAPI_GEOJSON_PGIS_OPTION"), geom_attr_name, body.sql )
+        else:
+            raise ValueError("Format de sortie inconnue: {}".format(output_format))
+        
+        # Lancement de la requête de l'usager vers la BD
+        row = db_view_session.execute(text(sql_template)).fetchone()    
+        
+        return jsonify(row[0]), 200
 
-
-def get_suivi_prod_sql(body=None, format=None):  # noqa: E501
-    """get_suivi_prod_sql
-
-    Reçoit une requête SQL et retourne un JSON ou un GeoJSON contenant les attributs recherchés. # noqa: E501
-
-    :param body: 
-    :type body: dict | bytes
-    :param format: 
-    :type format: str
-
-    :rtype: InlineResponse2002
-    """
-    if connexion.request.is_json:
-        body = Body.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+    except Exception as e:
+        raise Exception(utils_gapi.message_erreur(e, 500))            
 
 
 def get_suivi_prod_lot_id(identifiant, full_relation=None):  # noqa: E501
@@ -222,43 +245,7 @@ def get_suivi_prod_lot_id(identifiant, full_relation=None):  # noqa: E501
 
     :rtype: InlineResponse2001
     """
-    
-    requete = """select 
-                    lot.id, 
-                    lot.theme_cl, 
-                    code.nom, 
-                    lot.statut_lot_cl, 
-                    unite_travail_2.id as id_ut, 
-                    unite_travail_2.shape 
-                from 
-                    lot, 
-                    unite_travail_2, 
-                    code 
-                where 
-                        lot.theme_cl = 10307 
-                    and lot.id = unite_travail_2.id_lot 
-                    and lot.theme_cl = code.id"""
-    
-    sql_template = """SELECT jsonb_build_object( 
-            'type',     'FeatureCollection', 
-            'features', jsonb_agg(feature) 
-            ) 
-            FROM ( 
-            SELECT jsonb_build_object( 
-                'type',       'Feature', 
-                'geometry',   ST_AsGeoJSON(ST_Reverse(ST_Simplify(shape, 0.000005, True)),7,2)::json, 
-                'properties', to_jsonb(inputs) - 'shape' 
-            ) AS feature 
-            FROM (  {} 
-            ) inputs 
-            ) features"""
-    
-    sql_template = sql_template.format(requete)
-    print(sql_template)
-    row = db_view_session.execute(text(sql_template)).fetchone()    
-    print (str(row[0]))
-
-    return jsonify(row[0]), 200
+    return 'do some magic!'
 
 
 def get_suivi_prod_unite_travail_id(identifiant, full_relation=None):  # noqa: E501
@@ -311,7 +298,7 @@ def post_suivi_prod_etape_ut(body=None):  # noqa: E501
     try:
         body = SuiviProdEtapeUt.from_dict(body)  # noqa: E501
         
-        token_dict = utils_gapi.auth_header_to_dict(request.headers.get('Authorization'))
+        token_dict = utils_security.auth_header_to_dict(request.headers.get('Authorization'))
         date_auj = utils_gapi.date_now()
 
         e_ut = EtapeUt( etampe = "GAPI_"+token_dict["nom_usager"],
@@ -353,7 +340,7 @@ def post_suivi_prod_featuretype(body=None):  # noqa: E501
     try:
         body = [SuiviProdFeaturetype.from_dict(d) for d in body]
         
-        token_dict = utils_gapi.auth_header_to_dict(request.headers.get('Authorization'))
+        token_dict = utils_security.auth_header_to_dict(request.headers.get('Authorization'))
         date_auj = utils_gapi.date_now()
         out_mess = []
 
@@ -392,7 +379,7 @@ def post_suivi_prod_lot(body=None):  # noqa: E501
         #body = SuiviProdLotNoRel.from_dict(connexion.request.get_json())  # noqa: E501
         body = SuiviProdLotNoRel.from_dict(body)
         
-        token_dict = utils_gapi.auth_header_to_dict(request.headers.get('Authorization'))
+        token_dict = utils_security.auth_header_to_dict(request.headers.get('Authorization'))
         date_auj = utils_gapi.date_now()
         
         lot = Lot(  etampe = "GAPI_"+token_dict["nom_usager"],
@@ -429,7 +416,7 @@ def post_suivi_prod_planification(body=None):  # noqa: E501
     
     body = SuiviProdPlanification.from_dict(body)  # noqa: E501
     
-    token_dict = utils_gapi.auth_header_to_dict(request.headers.get('Authorization'))
+    token_dict = utils_security.auth_header_to_dict(request.headers.get('Authorization'))
     date_auj = utils_gapi.date_now()
     ident_lot = body.id_ut + "_LOT"
     out_mess = []
@@ -499,13 +486,13 @@ def post_suivi_prod_unite_travail(body=None):  # noqa: E501
     try:
         body = SuiviProdUniteTravail2NoRel.from_dict(body)  # noqa: E501
 
-        token_dict = utils_gapi.auth_header_to_dict(request.headers.get('Authorization'))
+        token_dict = utils_security.auth_header_to_dict(request.headers.get('Authorization'))
         
         # Validation et reprojection de la géométrie
-        body.geom = utils_gapi.validate_geometry(body.geom)
+        body.geom = utils_postgis.validate_geometry(body.geom)
 
         #conversion de la géométrie en EWKT
-        wkt = utils_gapi.convert_geojson_to_wkt(utils_gapi.validate_geometry(body.geom))
+        wkt = utils_postgis.convert_geojson_to_wkt(utils_postgis.validate_geometry(body.geom))
         wkt = "SRID={};{}".format(os.environ.get("GAPI_EPSG"), wkt)
 
         date_auj = utils_gapi.date_now()
@@ -546,7 +533,7 @@ def put_suivi_prod_etape_ut_id(identifiant, body=None):  # noqa: E501
     """
     
     try:
-        token_dict = utils_gapi.auth_header_to_dict(request.headers.get('Authorization'))
+        token_dict = utils_security.auth_header_to_dict(request.headers.get('Authorization'))
         date_auj = utils_gapi.date_now()
 
         rs = EtapeUt.query.filter(EtapeUt.id == identifiant).one()
@@ -587,7 +574,7 @@ def put_suivi_prod_lot_id(identifiant, body=None):  # noqa: E501
     """
 
     try:
-        token_dict = utils_gapi.auth_header_to_dict(request.headers.get('Authorization'))
+        token_dict = utils_security.auth_header_to_dict(request.headers.get('Authorization'))
         date_auj = utils_gapi.date_now()
 
         rs = Lot.query.filter(Lot.id == identifiant).one()
@@ -623,7 +610,7 @@ def put_suivi_prod_unite_travail_id(identifiant, body=None):  # noqa: E501
     :rtype: GeneralMessage
     """
     try:
-        token_dict = utils_gapi.auth_header_to_dict(request.headers.get('Authorization'))
+        token_dict = utils_security.auth_header_to_dict(request.headers.get('Authorization'))
         date_auj = utils_gapi.date_now()
 
         rs = UniteTravail2.query.filter(UniteTravail2.id == identifiant).one()

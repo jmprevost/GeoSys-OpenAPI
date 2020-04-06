@@ -86,17 +86,17 @@ paths:
                 $ref: '#/components/schemas/general_message'
       requestBody:
         content:
-          application/octet-stream:
+          multipart/form-data:
             schema:
-              type: string
-              format: binary
+              $ref: '#/components/schemas/systeme_fichier'
+        description: ''
       description: Téléverser un fichier.
       operationId: post-systeme-fichier
       parameters:
         - schema:
             type: string
           in: query
-          name: fichier_url
+          name: contenant_url
           required: true
           description: Chemin complet du fichier.
       tags:
@@ -1246,6 +1246,14 @@ paths:
             default: json
           in: query
           name: output_format
+        - schema:
+            type: boolean
+            enum:
+              - 'True'
+              - 'False'
+            default: 'True'
+          in: query
+          name: simplifier
       requestBody:
         content:
           application/json:
@@ -1722,6 +1730,13 @@ components:
         sql:
           type: string
       description: ''
+    systeme_fichier:
+      title: systeme_fichier
+      type: object
+      properties:
+        fichier:
+          type: string
+          format: binary
   securitySchemes:
     geosys_auth:
       flows:

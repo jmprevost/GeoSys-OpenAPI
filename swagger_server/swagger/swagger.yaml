@@ -119,7 +119,7 @@ paths:
       description: Téléverser un fichier.
       operationId: post_systeme_fichier
       parameters:
-      - name: fichier_url
+      - name: contenant_url
         in: query
         description: Chemin complet du fichier.
         required: true
@@ -129,10 +129,9 @@ paths:
           type: string
       requestBody:
         content:
-          application/octet-stream:
+          multipart/form-data:
             schema:
-              type: string
-              format: binary
+              $ref: '#/components/schemas/systeme_fichier'
       responses:
         "201":
           description: Created
@@ -1319,6 +1318,17 @@ paths:
           enum:
           - json
           - geojson
+      - name: simplifier
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: true
+          enum:
+          - true
+          - false
       requestBody:
         content:
           application/json:
@@ -1887,6 +1897,13 @@ components:
       properties:
         sql:
           type: string
+    systeme_fichier:
+      title: systeme_fichier
+      type: object
+      properties:
+        fichier:
+          type: string
+          format: binary
     ReturnValueBasicErrorMessage:
       title: ReturnValue-BasicErrorMessage
       type: object
