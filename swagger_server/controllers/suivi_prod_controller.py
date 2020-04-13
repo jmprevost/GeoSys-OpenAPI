@@ -21,9 +21,9 @@ from swagger_server import util
 #Ajouté manuellement
 from flask import request, make_response
 from swagger_server.config import db
-from swagger_server.controllers import utils_gapi
-from swagger_server.controllers import utils_security
-from swagger_server.controllers import utils_postgis
+from swagger_server.utils import utils_gapi
+from swagger_server.utils import utils_security
+from swagger_server.utils import utils_postgis
 from swagger_server.db_models.suivi_prod_db_schema import *
 import uuid
 from flask import jsonify

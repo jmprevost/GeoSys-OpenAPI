@@ -13,8 +13,8 @@ from swagger_server.models.systeme_ress_retour import SystemeRessRetour  # noqa:
 from swagger_server import util
 
 # Ajouter manuellement
-from swagger_server.controllers import utils_s3
-from swagger_server.controllers import utils_gapi
+from swagger_server.utils import utils_s3
+from swagger_server.utils import utils_gapi
 from flask import jsonify, request, Response
 from sqlalchemy.sql import text
 import json
@@ -25,14 +25,25 @@ from werkzeug.utils import secure_filename
 def delete_systeme_contenants(contenant_url):  # noqa: E501
     """delete_systeme_contenants
 
-    Efface un contenant (bucket) et les fichiers qu&#x27;il contient. # noqa: E501
+    Efface un contenant (bucket) et les fichiers qu'il contient. # noqa: E501
 
     :param contenant_url: URL identifiant le contenant.
     :type contenant_url: str
 
     :rtype: GeneralMessage
     """
-    return 'do some magic!'
+    contenant_url = utils_s3.check_bucket_trailing_slash(contenant_url)
+    
+    s3_session = utils_s3.get_s3_session(contenant_url)
+    s3_ress = s3_session.resource("s3")
+
+    utils_s3.check_s3_obj_existance(s3_session.client("s3"), contenant_url)
+
+    # Efface le répertoire ainsi que les sous-répertoires et fichiers
+    bucket = s3_ress.Bucket(os.environ.get("GAPI_AWS_S3_BUCKET_NAME"))
+    result = bucket.objects.filter(Prefix=contenant_url).delete()
+
+    return jsonify(result), 200
 
 
 def delete_systeme_fichier(fichier_url):  # noqa: E501
@@ -45,7 +56,15 @@ def delete_systeme_fichier(fichier_url):  # noqa: E501
 
     :rtype: GeneralMessage
     """
-    return 'do some magic!'
+
+    s3_session = utils_s3.get_s3_session(fichier_url)
+    s3_client = s3_session.client("s3")
+
+    utils_s3.check_s3_obj_existance(s3_client, fichier_url)
+
+    result = s3_client.delete_object(Bucket=os.environ.get("GAPI_AWS_S3_BUCKET_NAME"), Key=fichier_url)
+    
+    return jsonify(result), 200
 
 
 def get_systeme_envs():  # noqa: E501
@@ -69,7 +88,7 @@ def get_systeme_fichier(fichier_url):  # noqa: E501
 
     :rtype: str
     """
-    
+    # Check si le URL existe
     s3_session = utils_s3.get_s3_session(fichier_url)
     s3_client = s3_session.client("s3")
 
@@ -95,6 +114,7 @@ def get_systeme_liste_contenants_fichiers(contenant_url):  # noqa: E501
 
     :rtype: SystemeListeContenantsFichiers
     """
+    contenant_url = utils_s3.check_bucket_trailing_slash(contenant_url)
     s3_session = utils_s3.get_s3_session(contenant_url)
 
     s3_client = s3_session.client("s3")
@@ -156,6 +176,7 @@ def post_systeme_contenants(contenant_url):  # noqa: E501
 
     :rtype: GeneralMessage
     """
+    contenant_url = utils_s3.check_bucket_trailing_slash(contenant_url)
     ret = utils_s3.create_s3_object(contenant_url)
 
     # Retour    
@@ -175,6 +196,7 @@ def post_systeme_fichier(contenant_url, fichier=None):  # noqa: E501
     :rtype: GeneralMessage
     """
     
+    contenant_url = utils_s3.check_bucket_trailing_slash(contenant_url)
     ret = utils_s3.create_s3_object(contenant_url, fichier)
 
     # Retour    

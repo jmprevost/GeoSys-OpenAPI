@@ -6,6 +6,21 @@ import os
 from werkzeug.utils import secure_filename
 from flask import request
 
+def check_bucket_trailing_slash(contenant_url):
+    """check_bucket_trailing_slash
+
+    Vérifie si le url du contenant S3 se termine par un slash. On en ajoute un s'il n'y en a pas.
+
+    :param contenant_url: url du contenant S3
+    :type contenant_url: str
+    
+    :rtype: str
+    """
+    if str(contenant_url).endswith("/"):
+        return contenant_url
+    else:
+        return contenant_url + "/"
+
 def check_s3_theme_access( themes, s3_path ):
     """check_s3_theme_access
 
@@ -26,11 +41,22 @@ def check_s3_theme_access( themes, s3_path ):
 
     parts = str(s3_path).split("/")
     if len(parts) > 4:
-        return set([parts[3]]).issubset(set(themes))
+        return set([parts[3]]).issubset(set(themes)) #retour True ou False
     else:
         return True
 
-def get_s3_session(contenant_url):
+def check_s3_obj_existance(s3_client, obj_url):
+    
+    # Requête vers S3
+    result = s3_client.list_objects_v2(Bucket=os.environ.get("GAPI_AWS_S3_BUCKET_NAME"), Prefix=obj_url, Delimiter='/')
+    
+    #Vérifie si le URL est bon
+    if result.get('KeyCount') == 0:
+        raise Exception(utils_gapi.message_erreur("Le URL: {} n'existe pas".format(obj_url), 400))
+    
+    return True
+    
+def get_s3_session(s3_url):
     """get_s3_session
 
     Création d'un objet session s3 à partir des clés d'accès contenu dans le token de l'usager.
@@ -43,12 +69,13 @@ def get_s3_session(contenant_url):
     
     :rtype: boto3.session.Session
     """
+    
     # Lecture du token
     token_dict = utils_security.auth_header_to_dict(request.headers.get('Authorization'))
 
     # Vérification si l'usager a le droit d'accéder à URL
-    if check_s3_theme_access( token_dict["theme_nom"], contenant_url ) == False:
-        message = "Accès interdit! Vos thèmes permis sont: {}. Le URL que vous voulez accéder est: {}".format(token_dict["theme_nom"], contenant_url)
+    if check_s3_theme_access( token_dict["theme_nom"], s3_url ) == False:
+        message = "Accès interdit! Vos thèmes permis sont: {}. Le URL que vous voulez accéder est: {}".format(token_dict["theme_nom"], s3_url)
         raise Exception(utils_gapi.message_erreur(message, 400))
 
     # Connexion à S3
@@ -120,7 +147,7 @@ def get_total_bytes(s3_client, fichier_url):
     
     :rtype: int
     """
-
+    # Check si le URL exist
     result = s3_client.list_objects(Bucket=os.environ.get("GAPI_AWS_S3_BUCKET_NAME"))
     for item in result['Contents']:
         if item['Key'] == fichier_url:

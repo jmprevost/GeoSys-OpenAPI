@@ -61,7 +61,9 @@ def auth_header_to_dict( auth_header ):
 
     JWT_SECRET = os.environ.get("GAPI_CRYPTO_SALT")
     JWT_ALGORITHM = os.environ.get("GAPI_JWT_ALGORITHM")
-
-    token_content = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-
+    try:
+        token_content = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except Exception as e:
+        print (e)
+    
     return token_content
