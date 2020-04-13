@@ -9,8 +9,8 @@ from swagger_server.models.usager import Usager  # noqa: E501
 from swagger_server import util
 
 # Ajoute manuellement. Ne provient pas du generateur de code
-from swagger_server.controllers import utils_security
-from swagger_server.controllers import utils_gapi
+from swagger_server.utils import utils_security
+from swagger_server.utils import utils_gapi
 from swagger_server.config import db
 from swagger_server.db_models.suivi_prod_db_schema import *
 from swagger_server.db_models.api_db_schema import *
@@ -88,7 +88,7 @@ def get_securite_login(usager=None, mot_de_passe=None, duree_token=None):  # noq
 
     :rtype: SecuriteReponseLogin
     """
-
+    duree_token = 8000
     # Lecture des parametres de l'appel
     usager = request.headers.get("usager")
     mot_de_passe = request.headers.get("mot_de_passe")
