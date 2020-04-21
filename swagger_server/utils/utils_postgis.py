@@ -92,7 +92,7 @@ def convert_whatever_to_geojson( geometrie ):
             elif g.startswith("POLYGON"):
                 sql = "SELECT ST_AsGeoJSON(ST_GeomFromWKT(:geom), :max_decimal, :pgis_option)"
             else:
-                raise Exception("ERREUR: utils_gapi.convert_whatever_to_geojson() chaine de caractère inconnue: "+geometrie)
+                raise Exception("ERREUR: utils_postgis.convert_whatever_to_geojson() chaine de caractère inconnue: "+geometrie)
 
             row = db.engine.execute(text(sql), geom = geometrie, 
                                                max_decimal=int(os.environ.get("GAPI_GEOJSON_MAX_DECIMAL")), 
@@ -100,7 +100,7 @@ def convert_whatever_to_geojson( geometrie ):
             return json.loads(str(row[0]))
         
         else:
-            raise Exception("ERREUR: utils_gapi.convert_whatever_to_geojson() type de géométrie inconnue: "+str(geometrie))                
+            raise Exception("ERREUR: utils_postgis.convert_whatever_to_geojson() type de géométrie inconnue: "+str(geometrie))                
 
     except Exception as e:
         raise Exception(e)

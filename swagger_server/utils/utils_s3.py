@@ -1,5 +1,5 @@
-from swagger_server.controllers import utils_security
-from swagger_server.controllers import utils_gapi
+from swagger_server.utils import utils_security
+from swagger_server.utils import utils_gapi
 
 import boto3
 import os
@@ -15,8 +15,10 @@ def check_bucket_trailing_slash(contenant_url):
     :type contenant_url: str
     
     :rtype: str
-    """
-    if str(contenant_url).endswith("/"):
+    """        
+    contenant_url = str(contenant_url).strip()
+    contenant_url = str(contenant_url).lstrip("/")    
+    if str(contenant_url).endswith("/") or len(str(contenant_url)) == 0:
         return contenant_url
     else:
         return contenant_url + "/"
@@ -46,7 +48,17 @@ def check_s3_theme_access( themes, s3_path ):
         return True
 
 def check_s3_obj_existance(s3_client, obj_url):
+    """check_s3_obj_existance
+
+    Vérifie si le url du contenant S3 se termine par un slash. On en ajoute un s'il n'y en a pas.
+
+    :param s3_client: session d'un client dans S3
+    :type s3_client: boto3.Client
+    :param obj_url: URL d'un objet conservé dans S3
+    :type obj_url: str
     
+    :rtype: True ou une Exception
+    """
     # Requête vers S3
     result = s3_client.list_objects_v2(Bucket=os.environ.get("GAPI_AWS_S3_BUCKET_NAME"), Prefix=obj_url, Delimiter='/')
     
