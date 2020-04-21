@@ -237,19 +237,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/ReturnValueBasicErrorMessage'
       x-openapi-router-controller: swagger_server.controllers.securite_controller
-  /systeme/ressources:
-    get:
+  /systeme/ressources-recherche:
+    post:
       tags:
       - systeme
       description: Retourne une ressource (paramètre ou un groupe de paramètres) à
         partir d'une liste de fichier.
-      operationId: get_systeme_ressources
+      operationId: post_systeme_ressources_recherche
       parameters:
       - name: env
-        in: header
+        in: query
         required: false
-        style: simple
-        explode: false
+        style: form
+        explode: true
         schema:
           type: string
       requestBody:
@@ -257,14 +257,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/systeme_ress_requete'
-            examples:
-              exSystemeRessourceInput_01:
-                value:
-                  fichiers:
-                  - hydro_50k:ress_hydro.json
-                  - general:ress.json
-                  chemin_recherche:
-                  - ressources/liste_classes
       responses:
         "200":
           description: OK
@@ -272,17 +264,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/systeme_ress_retour'
-              examples:
-                exSystemeRessourceOutput_01:
-                  value:
-                    value:
-                      liste_classe:
-                      - waterbody_2
-                      - water_linear_flow_1
-                      - dam_2
-      security:
-      - geosys_auth:
-        - read
       x-openapi-router-controller: swagger_server.controllers.systeme_controller
   /suivi-prod/codes:
     get:
@@ -314,7 +295,7 @@ paths:
         explode: true
         schema:
           type: string
-      - name: id
+      - name: ident
         in: query
         required: false
         style: form
@@ -368,7 +349,7 @@ paths:
       description: Obtient un enregistrement de la table suivi_prod.list_codes.
       operationId: get_suivi_prod_code_list
       parameters:
-      - name: id
+      - name: ident
         in: query
         required: false
         style: form
@@ -501,6 +482,17 @@ paths:
         explode: false
         schema:
           type: string
+      - name: cascade
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+          enum:
+          - true
+          - false
       responses:
         "204":
           description: No Content
@@ -635,11 +627,11 @@ paths:
         style: form
         explode: true
         schema:
-          type: string
-          default: "false"
+          type: boolean
+          default: false
           enum:
-          - "true"
-          - "false"
+          - true
+          - false
       responses:
         "200":
           description: OK
@@ -695,6 +687,17 @@ paths:
         explode: false
         schema:
           type: string
+      - name: cascade
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+          default: false
+          enum:
+          - true
+          - false
       responses:
         "204":
           description: No Content
@@ -832,10 +835,10 @@ paths:
       - geosys_auth:
         - write
       x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
-  /geosys/creer-md:
+  /meta/creer-md:
     post:
       tags:
-      - geosys
+      - meta
       description: Service intégrateur pour la création de métadonnées dans GeoSys.
       operationId: post_geosys_creer_md
       requestBody:
@@ -853,11 +856,11 @@ paths:
       security:
       - geosys_auth:
         - write
-      x-openapi-router-controller: swagger_server.controllers.geosys_controller
-  /geosys/valider-md:
+      x-openapi-router-controller: swagger_server.controllers.meta_controller
+  /meta/valider-md:
     post:
       tags:
-      - geosys
+      - meta
       description: Service intégrateur pour la validation d'un fichier de métadonnées.
       operationId: post_geosys_valider_md
       requestBody:
@@ -875,7 +878,7 @@ paths:
       security:
       - geosys_auth:
         - read
-      x-openapi-router-controller: swagger_server.controllers.geosys_controller
+      x-openapi-router-controller: swagger_server.controllers.meta_controller
   /securite/usager/{nom}:
     get:
       tags:
@@ -1043,19 +1046,19 @@ paths:
       - geosys_auth:
         - write
       x-openapi-router-controller: swagger_server.controllers.data_controller
-  /geodata:
-    get:
+  /geodata-extract:
+    post:
       tags:
       - data
       description: Extraction de donnée à sens unique. La donnée extraite ne reviendra
         pas.
-      operationId: get_geodata
+      operationId: post_geodata_extract
       parameters:
       - name: env_app
-        in: header
+        in: query
         required: false
-        style: simple
-        explode: false
+        style: form
+        explode: true
         schema:
           type: string
       requestBody:
@@ -1222,12 +1225,13 @@ paths:
               examples:
                 exSystemeEnv_01:
                   value:
-                  - env: PRO
-                    url: http://127.0.0.1:4010/pro/
-                  - env: TST
-                    url: http://127.0.0.1:4010/tst/
-                  - env: DEV
-                    url: http://127.0.0.1:4010/dev/
+                    envs:
+                    - env: PRO
+                      url: http://127.0.0.1:4010/pro/
+                    - env: TST
+                      url: http://127.0.0.1:4010/tst/
+                    - env: DEV
+                      url: http://127.0.0.1:4010/dev/
       security:
       - geosys_auth:
         - read
@@ -1266,7 +1270,7 @@ paths:
       parameters:
       - name: contenant_url
         in: query
-        required: true
+        required: false
         style: form
         explode: true
         schema:
@@ -1300,12 +1304,12 @@ paths:
         - read
       x-openapi-router-controller: swagger_server.controllers.systeme_controller
   /suivi-prod/requete-bd:
-    get:
+    post:
       tags:
       - suivi-prod
       description: Permet de lancer une requete SQL au suivi de production et recevoir
         un JSON ou GeoJSON.
-      operationId: get_suivi_prod_requete_bd
+      operationId: post_suivi_prod_requete_bd
       parameters:
       - name: output_format
         in: query
@@ -1334,10 +1338,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/suiv_prod-requete_sql'
-          application/xml:
-            schema:
-              type: object
-              properties: {}
       responses:
         "200":
           description: OK
@@ -1345,73 +1345,12 @@ paths:
             application/json:
               schema:
                 type: object
+                properties: {}
+                example: {}
                 x-content-type: application/json
-              examples:
-                exSuiviProdRequeteBD_JSON:
-                  value:
-                    RecordCollection:
-                    - id_ut: AUTO_BUILDING_20181211_LCOUNTY
-                      nom: AUTO_BUILDING
-                      theme_cl: 10302
-                      statut_lot_cl: 10003
-                      id: AUTO_BUILDING_20181211_LCOUNTY_LOT
-                    - id_ut: AUTO_BUILDING_20181211_NBDNR16
-                      nom: AUTO_BUILDING
-                      theme_cl: 10302
-                      statut_lot_cl: 10003
-                      id: AUTO_BUILDING_20181211_NBDNR16_LOT
-                exSuiviProdRequeteBD_GeoJSON:
-                  value:
-                    type: FeatureCollection
-                    features:
-                    - geometry:
-                        crs:
-                          type: name
-                          properties:
-                            name: EPSG:4617
-                        type: Polygon
-                        coordinates:
-                        - - - -79.850741
-                            - 44.0401375
-                          - - -79.8418541
-                            - 44.0401375
-                          - - -79.8418541
-                            - 44.0446443
-                          - - -79.850741
-                            - 44.0446443
-                          - - -79.850741
-                            - 44.0401375
-                      type: Feature
-                      properties:
-                        id_ut: CORINT_50K_20180710_CTR3
-                        nom: CORINT_50K
-                        theme_cl: 10303
-                        statut_lot_cl: 10003
-                        id: CORINT_50K_20180710_CTR3_LOT
-                    - geometry:
-                        crs:
-                          type: name
-                          properties:
-                            name: EPSG:4617
-                        type: Polygon
-                        coordinates:
-                        - - - -133.0840712
-                            - 53.7702891
-                          - - -133.0766354
-                            - 53.7702891
-                          - - -133.0766354
-                            - 53.7746019
-                          - - -133.0840712
-                            - 53.7746019
-                          - - -133.0840712
-                            - 53.7702891
-                      type: Feature
-                      properties:
-                        id_ut: CORINT_50K_20190416_T_NPOSITION
-                        nom: CORINT_50K
-                        theme_cl: 10303
-                        statut_lot_cl: 10003
-                        id: CORINT_50K_20190416_T_NPOSITION_LOT
+      security:
+      - geosys_auth:
+        - read
       x-openapi-router-controller: swagger_server.controllers.suivi_prod_controller
 components:
   schemas:
@@ -1627,16 +1566,16 @@ components:
       properties:
         unite_travail_2:
           $ref: '#/components/schemas/suivi_prod-unite_travail_2-no_rel'
-        relation:
-          $ref: '#/components/schemas/suivi_produnite_travail_2full_rel_relation'
+        relations:
+          $ref: '#/components/schemas/suivi_produnite_travail_2full_rel_relations'
     suivi_prod-lot-full_rel:
       title: suivi_prod-lot-full_rel
       type: object
       properties:
         lot:
           $ref: '#/components/schemas/suivi_prod-lot-no_rel'
-        relation:
-          $ref: '#/components/schemas/suivi_prodlotfull_rel_relation'
+        relations:
+          $ref: '#/components/schemas/suivi_prodlotfull_rel_relations'
     suivi_prod-etape_sut:
       title: suivi_prod-etape_sut
       type: object
@@ -1863,9 +1802,18 @@ components:
         message: message
     systeme_envs:
       title: systeme_envs
-      type: array
-      items:
-        $ref: '#/components/schemas/systeme_envs_inner'
+      type: object
+      properties:
+        envs:
+          type: array
+          items:
+            $ref: '#/components/schemas/systeme_envs_envs'
+      example:
+        envs:
+        - env: env
+          url: url
+        - env: env
+          url: url
     systeme_liste_contenants_fichiers:
       title: systeme_liste_contenants_fichiers
       type: object
@@ -1927,7 +1875,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/suivi_prod-etape_sut'
-    suivi_produnite_travail_2full_rel_relation:
+    suivi_produnite_travail_2full_rel_relations:
       type: object
       properties:
         etape_ut:
@@ -1938,7 +1886,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/suivi_prod-sous_unite_travail-full_rel'
-    suivi_prodlotfull_rel_relation:
+    suivi_prodlotfull_rel_relations:
       type: object
       properties:
         executant:
@@ -1951,7 +1899,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/suivi_prod-featuretype'
-    systeme_envs_inner:
+    systeme_envs_envs:
       type: object
       properties:
         env:

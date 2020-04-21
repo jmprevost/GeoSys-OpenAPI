@@ -6,7 +6,7 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from swagger_server.models.base_model_ import Model
-from swagger_server.models.systeme_envs_inner import SystemeEnvsInner  # noqa: F401,E501
+from swagger_server.models.systeme_envs_envs import SystemeEnvsEnvs  # noqa: F401,E501
 from swagger_server import util
 
 
@@ -15,15 +15,20 @@ class SystemeEnvs(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self):  # noqa: E501
+    def __init__(self, envs: List[SystemeEnvsEnvs]=None):  # noqa: E501
         """SystemeEnvs - a model defined in Swagger
 
+        :param envs: The envs of this SystemeEnvs.  # noqa: E501
+        :type envs: List[SystemeEnvsEnvs]
         """
         self.swagger_types = {
+            'envs': List[SystemeEnvsEnvs]
         }
 
         self.attribute_map = {
+            'envs': 'envs'
         }
+        self._envs = envs
 
     @classmethod
     def from_dict(cls, dikt) -> 'SystemeEnvs':
@@ -35,3 +40,24 @@ class SystemeEnvs(Model):
         :rtype: SystemeEnvs
         """
         return util.deserialize_model(dikt, cls)
+
+    @property
+    def envs(self) -> List[SystemeEnvsEnvs]:
+        """Gets the envs of this SystemeEnvs.
+
+
+        :return: The envs of this SystemeEnvs.
+        :rtype: List[SystemeEnvsEnvs]
+        """
+        return self._envs
+
+    @envs.setter
+    def envs(self, envs: List[SystemeEnvsEnvs]):
+        """Sets the envs of this SystemeEnvs.
+
+
+        :param envs: The envs of this SystemeEnvs.
+        :type envs: List[SystemeEnvsEnvs]
+        """
+
+        self._envs = envs

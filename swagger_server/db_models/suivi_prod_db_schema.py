@@ -8,7 +8,8 @@ from sqlalchemy.orm import relationship
 from geoalchemy2.types import Geometry
 from geoalchemy2.shape import to_shape
 from shapely_geojson import dumps, Feature
-from swagger_server.controllers import utils_gapi
+from swagger_server.utils import utils_gapi
+from swagger_server.utils import utils_postgis
 import shapely.wkt
 import json
 import os
@@ -35,7 +36,6 @@ class ListeCodeSchema(ma.ModelSchema):
     class Meta:
         model = ListeCode
         sqla_session = db.session
-
 
 class Code(db.Model):
     __tablename__ = 'code'
@@ -92,7 +92,7 @@ class UniteTravail2(db.Model):
 
     def as_dict(self):
         d = {c.name: getattr(self, c.name) for c in self.__table__.columns}
-        d["shape"] = utils_gapi.convert_whatever_to_geojson(d["shape"])
+        d["shape"] = utils_postgis.convert_whatever_to_geojson(d["shape"])
 
         return d
 
@@ -130,6 +130,9 @@ class EtapeUt(db.Model):
     code = relationship('Code', primaryjoin='EtapeUt.nom_etape_cl == Code.id')
     code1 = relationship('Code', primaryjoin='EtapeUt.statut_etape_cl == Code.id')
 
+    def as_dict(self):
+       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+       
 class EtapeUtSchema(TableSchema):
     class Meta:
         include_fk = True

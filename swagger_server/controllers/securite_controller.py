@@ -83,7 +83,7 @@ def get_securite_login(usager=None, mot_de_passe=None, duree_token=None):  # noq
     :type usager: str
     :param mot_de_passe: 
     :type mot_de_passe: str
-    :param duree_token: Dur�e de vie du token en secondes.
+    :param duree_token: Durée de vie du token en secondes.
     :type duree_token: int
 
     :rtype: SecuriteReponseLogin
@@ -138,8 +138,6 @@ def get_securite_login(usager=None, mot_de_passe=None, duree_token=None):  # noq
 
     jwt_token = jwt.encode(payload, JWT_SECRET, JWT_ALGORITHM)
     
-    token_content = jwt.decode(jwt_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])    
-
     # Construction de la reponse de retour
     reponse = SecuriteReponseLogin( access_token=jwt_token.decode(), #La serialization en JSON n'accepte pas les bytes
                                     token_type="Bearer",

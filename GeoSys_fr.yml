@@ -235,11 +235,11 @@ paths:
       tags:
         - securite
     parameters: []
-  /systeme/ressources:
+  /systeme/ressources-recherche:
     parameters: []
-    get:
+    post:
       summary: ''
-      operationId: get-systeme-ressources
+      operationId: post-systeme-ressources-recherche
       responses:
         '200':
           description: OK
@@ -247,38 +247,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/systeme_ress_retour'
-              examples:
-                exSystemeRessourceOutput_01:
-                  value:
-                    value:
-                      liste_classe:
-                        - waterbody_2
-                        - water_linear_flow_1
-                        - dam_2
+      description: "Retourne une ressource (paramètre ou un groupe de paramètres) à partir d'une liste de fichier."
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: env
       requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/systeme_ress_requete'
-            examples:
-              exSystemeRessourceInput_01:
-                value:
-                  fichiers:
-                    - 'hydro_50k:ress_hydro.json'
-                    - 'general:ress.json'
-                  chemin_recherche:
-                    - ressources/liste_classes
-      description: "Retourne une ressource (paramètre ou un groupe de paramètres) à partir d'une liste de fichier."
+        description: ''
       tags:
         - systeme
-      security:
-        - geosys_auth:
-            - read
-      parameters:
-        - schema:
-            type: string
-          in: header
-          name: env
   /suivi-prod/codes:
     get:
       summary: ''
@@ -331,7 +313,7 @@ paths:
         - schema:
             type: integer
           in: query
-          name: id
+          name: ident
         - schema:
             type: integer
           in: query
@@ -368,7 +350,7 @@ paths:
         - schema:
             type: integer
           in: query
-          name: id
+          name: ident
         - schema:
             type: string
           in: query
@@ -406,10 +388,10 @@ paths:
       parameters:
         - schema:
             type: boolean
-            default: 'false'
+            default: 'False'
             enum:
-              - 'true'
-              - 'false'
+              - 'True'
+              - 'False'
           in: query
           name: full_relation
       operationId: get-suivi-prod-unite-travail-id
@@ -442,6 +424,15 @@ paths:
       security:
         - geosys_auth:
             - delete
+      parameters:
+        - schema:
+            type: boolean
+            enum:
+              - 'True'
+              - 'False'
+            default: 'False'
+          in: query
+          name: cascade
     put:
       summary: ''
       operationId: put-suivi-prod-unite_travail-id
@@ -572,11 +563,11 @@ paths:
       description: Retrieve a record from Lot table. By using the parameter full_relation=False you can retreive only the Lot record or by using full_relation=True you can retreive the Lot and all its dependencies (related table records).
       parameters:
         - schema:
-            type: string
-            default: 'false'
+            type: boolean
+            default: 'False'
             enum:
-              - 'true'
-              - 'false'
+              - 'True'
+              - 'False'
           in: query
           name: full_relation
       tags:
@@ -606,6 +597,15 @@ paths:
       security:
         - geosys_auth:
             - delete
+      parameters:
+        - schema:
+            type: boolean
+            enum:
+              - 'True'
+              - 'False'
+            default: 'False'
+          in: query
+          name: cascade
     put:
       summary: ''
       operationId: put-suivi-prod-lot-id
@@ -736,7 +736,7 @@ paths:
         - geosys_auth:
             - write
     parameters: []
-  /geosys/creer-md:
+  /meta/creer-md:
     post:
       summary: ''
       operationId: post-geosys-creer-md
@@ -748,8 +748,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/general_message'
       description: Service intégrateur pour la création de métadonnées dans GeoSys.
-      tags:
-        - geosys
       requestBody:
         content:
           application/json:
@@ -758,7 +756,10 @@ paths:
       security:
         - geosys_auth:
             - write
-  /geosys/valider-md:
+      tags:
+        - meta
+    parameters: []
+  /meta/valider-md:
     post:
       summary: ''
       operationId: post-geosys-valider-md
@@ -771,7 +772,7 @@ paths:
                 $ref: '#/components/schemas/general_message'
       description: "Service intégrateur pour la validation d'un fichier de métadonnées."
       tags:
-        - geosys
+        - meta
       requestBody:
         content:
           multipart/form-data:
@@ -781,6 +782,7 @@ paths:
       security:
         - geosys_auth:
             - read
+    parameters: []
   '/securite/usager/{nom}':
     get:
       summary: ''
@@ -918,11 +920,10 @@ paths:
             type: string
           in: header
           name: env_app
-  /geodata:
-    get:
+  /geodata-extract:
+    post:
       summary: ''
-      tags:
-        - data
+      operationId: post-geodata-extract
       responses:
         '200':
           description: OK
@@ -930,22 +931,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/general_message'
-      operationId: get-geodata
       description: Extraction de donnée à sens unique. La donnée extraite ne reviendra pas.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/geodata_lecture'
-        description: ''
       security:
         - geosys_auth:
             - read
       parameters:
         - schema:
             type: string
-          in: header
+          in: query
           name: env_app
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/geodata_lecture'
+        description: ''
+      tags:
+        - data
+    parameters: []
   /suivi-prod/planification:
     post:
       summary: ''
@@ -1085,12 +1088,13 @@ paths:
               examples:
                 exSystemeEnv_01:
                   value:
-                    - env: PRO
-                      url: 'http://127.0.0.1:4010/pro/'
-                    - env: TST
-                      url: 'http://127.0.0.1:4010/tst/'
-                    - env: DEV
-                      url: 'http://127.0.0.1:4010/dev/'
+                    envs:
+                      - env: PRO
+                        url: 'http://127.0.0.1:4010/pro/'
+                      - env: TST
+                        url: 'http://127.0.0.1:4010/tst/'
+                      - env: DEV
+                        url: 'http://127.0.0.1:4010/dev/'
       operationId: get-systeme-envs
       description: Retourne la liste des environnements existant dans le système Geosys.
       security:
@@ -1153,16 +1157,14 @@ paths:
             type: string
           in: query
           name: contenant_url
-          required: true
       security:
         - geosys_auth:
             - read
       description: Renvoi la liste des fichiers et répertoires existants sous un URL donné dans Amazon S3.
   /suivi-prod/requete-bd:
-    get:
+    post:
       summary: ''
-      tags:
-        - suivi-prod
+      operationId: post-suivi-prod-requete-bd
       responses:
         '200':
           description: OK
@@ -1170,73 +1172,11 @@ paths:
             application/json:
               schema:
                 type: object
-              examples:
-                exSuiviProdRequeteBD_JSON:
-                  value:
-                    RecordCollection:
-                      - id_ut: AUTO_BUILDING_20181211_LCOUNTY
-                        nom: AUTO_BUILDING
-                        theme_cl: 10302
-                        statut_lot_cl: 10003
-                        id: AUTO_BUILDING_20181211_LCOUNTY_LOT
-                      - id_ut: AUTO_BUILDING_20181211_NBDNR16
-                        nom: AUTO_BUILDING
-                        theme_cl: 10302
-                        statut_lot_cl: 10003
-                        id: AUTO_BUILDING_20181211_NBDNR16_LOT
-                exSuiviProdRequeteBD_GeoJSON:
-                  value:
-                    type: FeatureCollection
-                    features:
-                      - geometry:
-                          crs:
-                            type: name
-                            properties:
-                              name: 'EPSG:4617'
-                          type: Polygon
-                          coordinates:
-                            - - - -79.850741
-                                - 44.0401375
-                              - - -79.8418541
-                                - 44.0401375
-                              - - -79.8418541
-                                - 44.0446443
-                              - - -79.850741
-                                - 44.0446443
-                              - - -79.850741
-                                - 44.0401375
-                        type: Feature
-                        properties:
-                          id_ut: CORINT_50K_20180710_CTR3
-                          nom: CORINT_50K
-                          theme_cl: 10303
-                          statut_lot_cl: 10003
-                          id: CORINT_50K_20180710_CTR3_LOT
-                      - geometry:
-                          crs:
-                            type: name
-                            properties:
-                              name: 'EPSG:4617'
-                          type: Polygon
-                          coordinates:
-                            - - - -133.0840712
-                                - 53.7702891
-                              - - -133.0766354
-                                - 53.7702891
-                              - - -133.0766354
-                                - 53.7746019
-                              - - -133.0840712
-                                - 53.7746019
-                              - - -133.0840712
-                                - 53.7702891
-                        type: Feature
-                        properties:
-                          id_ut: CORINT_50K_20190416_T_NPOSITION
-                          nom: CORINT_50K
-                          theme_cl: 10303
-                          statut_lot_cl: 10003
-                          id: CORINT_50K_20190416_T_NPOSITION_LOT
-      operationId: get-suivi-prod-requete-bd
+                properties: {}
+      description: Permet de lancer une requete SQL au suivi de production et recevoir un JSON ou GeoJSON.
+      security:
+        - geosys_auth:
+            - read
       parameters:
         - schema:
             type: string
@@ -1259,12 +1199,9 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/suiv_prod-requete_sql'
-          application/xml:
-            schema:
-              type: object
-              properties: {}
         description: ''
-      description: Permet de lancer une requete SQL au suivi de production et recevoir un JSON ou GeoJSON.
+      tags:
+        - suivi-prod
 components:
   schemas:
     message_erreur:
@@ -1455,7 +1392,7 @@ components:
       properties:
         unite_travail_2:
           $ref: '#/components/schemas/suivi_prod-unite_travail_2-no_rel'
-        relation:
+        relations:
           type: object
           properties:
             etape_ut:
@@ -1472,7 +1409,7 @@ components:
       properties:
         lot:
           $ref: '#/components/schemas/suivi_prod-lot-no_rel'
-        relation:
+        relations:
           type: object
           properties:
             executant:
@@ -1691,14 +1628,17 @@ components:
           type: string
     systeme_envs:
       title: systeme_envs
-      type: array
-      items:
-        type: object
-        properties:
-          env:
-            type: string
-          url:
-            type: string
+      type: object
+      properties:
+        envs:
+          type: array
+          items:
+            type: object
+            properties:
+              env:
+                type: string
+              url:
+                type: string
     systeme_liste_contenants_fichiers:
       title: systeme_liste_contenants_fichiers
       type: object

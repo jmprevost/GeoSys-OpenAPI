@@ -53,7 +53,7 @@ app.config["JSONIFY_PRETTYPRINT_REGULAR"] = True
 #app.config['PRESERVE_CONTEXT_ON_EXCEPTION'] = False
 
 # Create the SqlAlchemy db instance
-db = SQLAlchemy(app)
+db = SQLAlchemy(app, session_options={'autocommit': False})
 
 # Initialize Marshmallow
 ma = Marshmallow(app)

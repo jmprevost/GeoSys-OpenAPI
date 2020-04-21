@@ -21,13 +21,11 @@ def post_geosys_creer_md(body=None):  # noqa: E501
     return 'do some magic!'
 
 
-def post_geosys_valider_md(env=None, theme=None, id_ut=None, fichier_json=None, logfile=None):  # noqa: E501
+def post_geosys_valider_md(theme=None, id_ut=None, fichier_json=None, logfile=None):  # noqa: E501
     """post_geosys_valider_md
 
     Service intégrateur pour la validation d&#x27;un fichier de métadonnées. # noqa: E501
 
-    :param env: 
-    :type env: str
     :param theme: 
     :type theme: str
     :param id_ut: 

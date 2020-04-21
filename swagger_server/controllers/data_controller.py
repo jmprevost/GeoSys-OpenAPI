@@ -11,20 +11,6 @@ from swagger_server import util
 import os
 from werkzeug.utils import secure_filename
 
-def get_geodata(body=None):  # noqa: E501
-    """get_geodata
-
-    Extraction de donnée à sens unique. La donnée extraite ne reviendra pas. # noqa: E501
-
-    :param body: 
-    :type body: dict | bytes
-
-    :rtype: GeneralMessage
-    """
-    if connexion.request.is_json:
-        body = GeodataLecture.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
-
 
 def get_geodata_identifiant(identifiant):  # noqa: E501
     """get_geodata_identifiant
@@ -36,6 +22,22 @@ def get_geodata_identifiant(identifiant):  # noqa: E501
 
     :rtype: GeneralMessage
     """
+    return 'do some magic!'
+
+def post_geodata_extract(body=None, env_app=None):  # noqa: E501
+    """post_geodata_extract
+
+    Extraction de donnée à sens unique. La donnée extraite ne reviendra pas. # noqa: E501
+
+    :param body: 
+    :type body: dict | bytes
+    :param env_app: 
+    :type env_app: str
+
+    :rtype: GeneralMessage
+    """
+    if connexion.request.is_json:
+        body = GeodataLecture.from_dict(connexion.request.get_json())  # noqa: E501
     return 'do some magic!'
 
 def post_geodata_identifiant(identifiant, fichier_data=None, fichier_meta=None, env_app=None):  # noqa: E501

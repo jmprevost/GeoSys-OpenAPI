@@ -19,6 +19,8 @@ from swagger_server.models.suivi_prod_unite_travail2_no_rel import SuiviProdUnit
 from swagger_server import util
 
 #Ajouté manuellement
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import MultipleResultsFound
 from flask import request, make_response
 from swagger_server.config import db
 from swagger_server.utils import utils_gapi
@@ -32,6 +34,8 @@ from flask import jsonify
 from swagger_server.config import db_view_session
 from sqlalchemy.sql import text
 
+from flask import Response
+
 
 def delete_suivi_prod_etape_ut_id(identifiant):  # noqa: E501
     """delete_suivi_prod_etape_ut_id
@@ -43,7 +47,17 @@ def delete_suivi_prod_etape_ut_id(identifiant):  # noqa: E501
 
     :rtype: GeneralMessage
     """
-    return 'do some magic!'
+
+    try:
+        etp_ut = EtapeUt.query.filter(EtapeUt.id == identifiant).one()        
+        db.session.delete(etp_ut)
+        db.session.flush()
+
+    except Exception as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))
+    
+    mess = "L'étape {} a été effacée de la table etape_ut".format(etp_ut.id)
+    return jsonify(message=mess), 200
 
 
 def delete_suivi_prod_featuretype_id(identifiant):  # noqa: E501
@@ -56,10 +70,19 @@ def delete_suivi_prod_featuretype_id(identifiant):  # noqa: E501
 
     :rtype: GeneralMessage
     """
-    return 'do some magic!'
+    try:
+        stmt = FeatureType.__table__.delete().where(FeatureType.id == identifiant)
+        db.session.execute(stmt)
+        db.session.flush()
+        
+    except Exception as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))
+    
+    mess = "Les enregistrements dans la table feature_type liés au lot {} ont été effacés".format(identifiant)
+    return jsonify(message=mess), 200
 
 
-def delete_suivi_prod_lot_id(identifiant):  # noqa: E501
+def delete_suivi_prod_lot_id(identifiant, cascade=None):  # noqa: E501
     """delete_suivi_prod_lot_id
 
     Delete a record in Lot table. # noqa: E501
@@ -69,10 +92,27 @@ def delete_suivi_prod_lot_id(identifiant):  # noqa: E501
 
     :rtype: GeneralMessage
     """
-    return 'do some magic!'
+    try:
+        lot = Lot.query.filter(Lot.id == identifiant).one()
+        
+        if cascade == True:
+            delete_suivi_prod_featuretype_id(lot.id)
+
+            ut = UniteTravail2.query.filter(UniteTravail2.id_lot == lot.id).all()
+            for v in ut:
+                delete_suivi_prod_unite_travail_id(v.id, True)
+
+        db.session.delete(lot)
+        db.session.flush()
+
+    except Exception as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))    
+
+    mess = "Le lot {} a été effacé de la table Lot. Option casde = {}".format(lot.id, cascade)
+    return jsonify(message=mess), 200
 
 
-def delete_suivi_prod_unite_travail_id(identifiant):  # noqa: E501
+def delete_suivi_prod_unite_travail_id(identifiant, cascade=None):  # noqa: E501
     """delete_suivi_prod_unite_travail_id
 
     Delete a record in table unite_travail_2. # noqa: E501
@@ -82,25 +122,55 @@ def delete_suivi_prod_unite_travail_id(identifiant):  # noqa: E501
 
     :rtype: GeneralMessage
     """
-    return 'do some magic!'
+    try:
+        ut = UniteTravail2.query.filter(UniteTravail2.id == identifiant).one()
+
+        if cascade == True:
+            stmt = EtapeUt.__table__.delete().where(EtapeUt.id_unite_travail == ut.id)
+            db.session.execute(stmt)            
+            
+        db.session.delete(ut)
+        db.session.flush()
+
+    except Exception as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))
+    
+    mess = "L'unité de travail {} a été effacé de la table unite_travail_2. Option casde = {}".format(ut.id, cascade)
+    return jsonify(message=mess), 200
 
 
-def get_suivi_prod_code_list(id=None, nom=None):  # noqa: E501
+def get_suivi_prod_code_list(ident=None, nom=None):  # noqa: E501
     """get_suivi_prod_code_list
 
     Obtient un enregistrement de la table suivi_prod.list_codes. # noqa: E501
 
     :param id: 
-    :type id: int
+    :type id: str
     :param nom: 
     :type nom: str
 
     :rtype: List[SuiviProdCodeList]
     """
-    return 'do some magic!'
+    try:
+        if nom != None:        
+            codes = ListeCode.query.filter(ListeCode.nom == nom).all()
+        elif ident != None:
+            codes = ListeCode.query.filter(ListeCode.id == ident).all()
+        else:
+            codes = ListeCode.query.all()
+                
+        MASerializer = ListeCodeSchema()
+        liste_codes = []
+        for v in codes:
+            liste_codes.append(MASerializer.dump(v))
 
+    except NoResultFound as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))
 
-def get_suivi_prod_codes(categorie=None, nom=None, id=None, id_list_codes=None):  # noqa: E501
+    return jsonify(liste_codes), 200
+    
+
+def get_suivi_prod_codes(categorie=None, nom=None, ident=None, id_list_codes=None):  # noqa: E501
     """get_suivi_prod_codes
 
     Obtient un enregistrement de la table suivi_prod.code. # noqa: E501
@@ -116,7 +186,25 @@ def get_suivi_prod_codes(categorie=None, nom=None, id=None, id_list_codes=None):
 
     :rtype: List[SuiviProdCode]
     """
-    return 'do some magic!'
+    try:
+        if nom != None:        
+            codes = Code.query.filter(Code.nom == nom).all()
+        elif id_list_codes != None:
+            codes = Code.query.filter(Code.id_liste_codes == id_list_codes).all()
+        elif ident != None:
+            codes = Code.query.filter(Code.id == ident).all()
+        else:
+            raise Exception(utils_gapi.message_erreur("Tous les paramètres de /suivi-prod/codes sont null", 400))
+                
+        MASerializer = CodeSchema()
+        liste_codes = []
+        for v in codes:
+            liste_codes.append(MASerializer.dump(v))
+
+    except NoResultFound as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))
+
+    return jsonify(liste_codes), 200
 
 
 def get_suivi_prod_codes_code(code):  # noqa: E501
@@ -153,7 +241,18 @@ def get_suivi_prod_etape_ut_id(identifiant):  # noqa: E501
 
     :rtype: SuiviProdEtapeUt
     """
-    return 'do some magic!'
+    # Requête dans la table de Etape_ut
+    try:
+        res = EtapeUt.query.filter(EtapeUt.id == identifiant).one()
+        MASerializer = EtapeUtSchema()
+        etape_ut_json = MASerializer.dump(res)
+    
+    except NoResultFound as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))
+    except MultipleResultsFound as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))
+    
+    return jsonify(etape_ut_json), 200
 
 
 def get_suivi_prod_featuretype_id(identifiant):  # noqa: E501
@@ -166,9 +265,179 @@ def get_suivi_prod_featuretype_id(identifiant):  # noqa: E501
 
     :rtype: List[SuiviProdFeaturetype]
     """
-    return 'do some magic!'
+    # Requête dans la table de featuretype
+    try:
+        list_feat = []
+        res = FeatureType.query.filter(FeatureType.id == identifiant).all()
+        for v in res:
+            list_feat.append(v.as_dict())
+    
+        rcoll = {}
+        rcoll["RecordCollection"] = list_feat
 
-def get_suivi_prod_requete_bd(body=None, output_format=None, simplifier=None):  # noqa: E501
+    except NoResultFound as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))    
+    
+    return jsonify(rcoll), 200
+
+
+def get_suivi_prod_lot_id(identifiant, full_relation=None):  # noqa: E501
+    """get_suivi_prod_lot_id
+
+    Retrieve a record from Lot table. By using the parameter full_relation&#x3D;False you can retreive only the Lot record or by using full_relation&#x3D;True you can retreive the Lot and all its dependencies (related table records). # noqa: E501
+
+    :param identifiant: 
+    :type identifiant: str
+    :param full_relation: 
+    :type full_relation: Boolean
+
+    :rtype: InlineResponse2001
+    """
+    # Requête dans la table de lot
+    try:
+        lot = Lot.query.filter(Lot.id == identifiant).one()
+        
+    except NoResultFound as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))
+    except MultipleResultsFound as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))
+    
+    if full_relation == False: # Retourne le lot sans ses relations        
+        return jsonify(lot.as_dict()), 200
+    else:
+        try:
+            # Boucle pour construire la liste des unité de travail reliées au lot
+            liste_ut = []
+            resultats = UniteTravail2.query.filter(UniteTravail2.id_lot == lot.id).all()
+            for v in resultats:
+                rep = get_suivi_prod_unite_travail_id(v.id, True)                
+                liste_ut.append(rep[0].json)
+
+            # Boucle pour construire la liste des featuretype reliés au lot
+            liste_feat = []
+            res = FeatureType.query.filter(FeatureType.id == lot.id).all()
+            for v in res:
+                liste_feat.append(v.as_dict())
+
+            # Construction de la réponse soit le lot + toutes ses dépendances
+            full = {}
+            full["lot"] = lot.as_dict()
+            full["executant"] = ""
+            full["relations"] = {"unite_travail_2": liste_ut, "feature_type": liste_feat}
+            
+            return jsonify(full), 200
+
+        except NoResultFound as e:
+            raise Exception(utils_gapi.message_erreur(e, 400))
+
+    
+def get_suivi_prod_unite_travail_id(identifiant, full_relation=None):  # noqa: E501
+    """get_suivi_prod_unite_travail_id
+
+    Retourne un enregistrement de la table suivi-prod.unite_travail_2. En utilisant le 
+    paramètre full_relation=False vous obtener uniquement l'enregistrement de la table suivi-prod.unite_travail_2. 
+    En utilisant le paramètre full_relation=True vous obtenez l'enregistrement de la table suivi-prod.unite_travail_2
+    ainsi que toutes ses dépendances (l'information provenant des tables en relation).
+
+    :param identifiant: Identifiant de l'unité de travail
+    :type identifiant: str
+    :param full_relation: 
+    :type full_relation: bool
+
+    :rtype: InlineResponse200
+    """
+    # Requête dans la table de unite_travail_2
+    try:
+        ut = UniteTravail2.query.filter(UniteTravail2.id == identifiant).one()
+        
+    except NoResultFound as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))
+    except MultipleResultsFound as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))
+    
+    if full_relation == False: # Retourne l'unité de travail sans ses relations
+        return jsonify(ut.as_dict()), 200
+    else:
+        try:
+            # Boucle pour construire la liste des étapes reliées à l'unité de travail
+            list_etape_ut = []
+            res = EtapeUt.query.filter(EtapeUt.id_unite_travail == ut.id).all()
+            for v in res:
+                list_etape_ut.append(v.as_dict())
+            
+            # Construction de la réponse soit l'unité de travail + toutes ses dépendances
+            full = {}
+            full["unite_travail_2"] = ut.as_dict()        
+            full["relations"] = {"etape_ut": list_etape_ut, "sous_etape_travail": ""}
+
+            return jsonify(full), 200
+
+        except NoResultFound as e:
+            raise Exception(utils_gapi.message_erreur(e, 400))
+
+
+def get_suivi_prod_unite_travail_listeid_theme_actif(theme):  # noqa: E501
+    """Your GET endpoint
+
+    Retourne une liste de ID des unités de travail active selon un thème. # noqa: E501
+
+    :param theme: 
+    :type theme: str
+
+    :rtype: GeneralListeValeur
+    """
+    """
+    try:
+        pass
+        UniteTravail2 = UniteTravail2.query.filter(UniteTravail2.nom_usager == usager).one()
+    except expression as identifier:
+        pass
+    """
+
+    try:
+        ut = UniteTravail2.query.join(Lot).filter(Lot.theme_cl == theme) \
+                                          .filter(Lot.statut_lot_cl.in_([10001, 10002])).all()
+        
+        liste_ut = []
+        for v in ut:
+            liste_ut.append(v.id)
+
+        ret = GeneralListeValeur(value=liste_ut)        
+
+    except NoResultFound as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))
+    
+    return jsonify(ret.to_dict()), 200
+
+
+def get_suivi_prod_type_travail_theme(theme):  # noqa: E501
+    """Your GET endpoint
+
+    Retourne une liste des travaux disponibles pour un thème donné. # noqa: E501
+
+    :param theme: 
+    :type theme: str
+
+    :rtype: List[SuiviProdCode]
+    """
+    try:
+        co = get_suivi_prod_codes_code(theme)
+        
+        codes = Code.query.filter(Code.id_liste_codes == 10800) \
+                         .filter(Code.nom.like(str(co[0].json["nom"])+'%')).all()
+        
+        MASerializer = CodeSchema()
+        liste_codes = []
+        for v in codes:
+            liste_codes.append(MASerializer.dump(v))
+
+    except Exception as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))
+
+    return jsonify(liste_codes), 200
+
+
+def post_suivi_prod_requete_bd(body=None, output_format=None, simplifier=None):  # noqa: E501
     """get_suivi_prod_requete_bd
 
     Permet de lancer une requete SQL au suivi de production et recevoir un JSON ou GeoJSON. # noqa: E501
@@ -185,8 +454,13 @@ def get_suivi_prod_requete_bd(body=None, output_format=None, simplifier=None):  
         if connexion.request.is_json:
             body = SuivProdRequeteSql.from_dict(connexion.request.get_json())  # noqa: E501
         else:
-            raise ValueError("Le service attend un JSON valide contenant la requête")
+            raise ValueError("Le service attend un JSON valide contenant la requête SQL à exécuter")
         
+        # On s'assure qu'il n'y a pas de ";" à la fin de la requête SQL envotée par l'usager
+        body.sql = str(body.sql).strip(";")
+
+        #TODO: Vérifier que la requête SQL ne contient pas de INSERT, UPDATE, DELETE, ALTER, TRUNCATE, etc.
+
         # Choix du template pour la requête JSON ou GeoJSON?
         if output_format == "json":
             sql_template = """SELECT jsonb_build_object( 
@@ -231,58 +505,6 @@ def get_suivi_prod_requete_bd(body=None, output_format=None, simplifier=None):  
 
     except Exception as e:
         raise Exception(utils_gapi.message_erreur(e, 500))            
-
-
-def get_suivi_prod_lot_id(identifiant, full_relation=None):  # noqa: E501
-    """get_suivi_prod_lot_id
-
-    Retrieve a record from Lot table. By using the parameter full_relation&#x3D;False you can retreive only the Lot record or by using full_relation&#x3D;True you can retreive the Lot and all its dependencies (related table records). # noqa: E501
-
-    :param identifiant: 
-    :type identifiant: str
-    :param full_relation: 
-    :type full_relation: str
-
-    :rtype: InlineResponse2001
-    """
-    return 'do some magic!'
-
-
-def get_suivi_prod_unite_travail_id(identifiant, full_relation=None):  # noqa: E501
-    """get_suivi_prod_unite_travail_id
-
-    Retourne un enregistrement de la table suivi-prod.unite_travail_2. En utilisant le paramètre full_relation&#x3D;False vous obtener uniquement l&#x27;enregistrement de la table suivi-prod.unite_travail_2. En utilisant le paramètre full_relation&#x3D;True vous obtenez l&#x27;enregistrement de la table suivi-prod.unite_travail_2 ainsi que toutes ses dépendances (l&#x27;information provenant des tables en relation). # noqa: E501
-
-    :param identifiant: Work area id
-    :type identifiant: str
-    :param full_relation: 
-    :type full_relation: bool
-
-    :rtype: InlineResponse200
-    """
-    return 'do some magic!'
-
-
-def get_suivi_prod_unite_travail_listeid_theme_actif(theme):  # noqa: E501
-    """Your GET endpoint
-
-    Retourne une liste de ID des unités de travail active selon un thème. # noqa: E501
-
-    :param theme: 
-    :type theme: str
-
-    :rtype: GeneralListeValeur
-    """
-    """
-    try:
-        pass
-        UniteTravail2 = UniteTravail2.query.filter(UniteTravail2.nom_usager == usager).one()
-    except expression as identifier:
-        pass
-    """
-
-    return 'do some magic!'
-
 
 def post_suivi_prod_etape_ut(body=None):  # noqa: E501
     """post_suivi_prod_etape_ut
@@ -515,7 +737,6 @@ def post_suivi_prod_unite_travail(body=None):  # noqa: E501
     except BaseException as e:        
         raise Exception(utils_gapi.message_erreur(e, 400))
     
-    #return GeneralMessage(message=str(ut.as_dict())), 200 
     return jsonify(ut.as_dict()), 200
 
 
@@ -547,7 +768,7 @@ def put_suivi_prod_etape_ut_id(identifiant, body=None):  # noqa: E501
         rs.etampe = "GAPI_"+token_dict["nom_usager"]
         rs.dt_m = date_auj
 
-        #db.session.commit()
+        db.session.flush()        
 
         # Serializer le contenu de l'objet BD en JSON pour le retourner
         MASerializer = EtapeUtSchema()
@@ -556,7 +777,6 @@ def put_suivi_prod_etape_ut_id(identifiant, body=None):  # noqa: E501
     except BaseException as e:
         raise Exception(utils_gapi.message_erreur(e, 400))
 
-    #return GeneralMessage(message=str(e_ut)), 200 
     return jsonify(e_ut), 200
 
 
@@ -588,12 +808,11 @@ def put_suivi_prod_lot_id(identifiant, body=None):  # noqa: E501
         rs.etampe = "GAPI_"+token_dict["nom_usager"]
         rs.dt_m = date_auj
 
-        #db.session.commit()
+        db.session.flush()
 
     except BaseException as e:
         raise Exception(utils_gapi.message_erreur(e, 400))
-
-    #return GeneralMessage(message=str(e_ut)), 200 
+    
     return jsonify(rs.as_dict()), 200
 
 
@@ -624,23 +843,9 @@ def put_suivi_prod_unite_travail_id(identifiant, body=None):  # noqa: E501
         rs.etampe = "GAPI_"+token_dict["nom_usager"]
         rs.dt_m = date_auj
 
-        #db.session.commit()
+        db.session.flush()
 
     except BaseException as e:
         raise Exception(utils_gapi.message_erreur(e, 400))
 
-    #return GeneralMessage(message=str(e_ut)), 200 
     return jsonify(rs.as_dict()), 200
-
-
-def get_suivi_prod_type_travail_theme(theme):  # noqa: E501
-    """Your GET endpoint
-
-    Retourne une liste des travaux disponibles pour un thème donné. # noqa: E501
-
-    :param theme: 
-    :type theme: str
-
-    :rtype: List[SuiviProdCode]
-    """
-    return 'do some magic!'
