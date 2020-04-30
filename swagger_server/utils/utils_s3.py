@@ -5,6 +5,7 @@ import boto3
 import os
 from werkzeug.utils import secure_filename
 from flask import request
+import mimetypes
 
 def check_bucket_trailing_slash(contenant_url):
     """check_bucket_trailing_slash
@@ -130,16 +131,19 @@ def create_s3_object(contenant_url, contenu=None):
         message = "Le dossier: {} a été créé.".format(contenant_url)
     
     else:
-
         # Copie du fichier dans S3
-        fsize = get_size(contenu)
-        
-        fichier_url = secure_filename(contenu.filename)
-        fichier_url = str(contenant_url)+str(fichier_url)
+        fsize = get_size(contenu)        
+        fname = secure_filename(contenu.filename)
+        fichier_url = str(contenant_url)+str(fname)
 
+        if contenu.content_type == None or contenu.content_type == "":
+            content_type = mimetypes.MimeTypes().guess_type(fname)[0]
+        else:
+            content_type = contenu.content_type
+        
         # Si le fichier à copier dépasse une certaine limite, on le téléverse en plusieurs morceau au lieu d'un seul.
         if fsize < int(os.environ.get("GAPI_AWS_S3_MULTI_PART_CHUNK_SIZE")):            
-            client.put_object(Body=contenu, Bucket=bucket_name, Key=fichier_url, ContentType=contenu.content_type)
+            client.put_object(Body=contenu, Bucket=bucket_name, Key=fichier_url, ContentType=content_type)
         else:            
             upload_s3_multi_part(client, fichier_url, contenu, bucket_name)
         
