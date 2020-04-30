@@ -219,7 +219,11 @@ def get_suivi_prod_codes_code(code):  # noqa: E501
     """
     # Requête dans la table de Code
     try:
-        res = Code.query.filter(Code.id == code).one()
+        if str(code).isdigit():
+            res = Code.query.filter(Code.id == code).one()
+        else:
+            res = Code.query.filter(Code.nom == code).one()        
+
         MASerializer = CodeSchema()
         code_json = MASerializer.dump(res)
     

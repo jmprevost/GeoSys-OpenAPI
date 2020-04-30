@@ -1,6 +1,6 @@
 from geoalchemy2.elements import WKBElement
-from shapely_geojson import dumps, Feature
-from geoalchemy2.shape import to_shape
+#from shapely_geojson import dumps, Feature
+#from geoalchemy2.shape import to_shape
 from sqlalchemy.sql import text
 import json
 import os
@@ -29,7 +29,7 @@ def validate_geometry( geojson ):
     # Forcer l'orientation des vertex du polygone selon le Right-Hand-Rule. 
     # Pour l'instant, nous utilisons PostGIS 2.3.7 et la fonction ST_ForceRHR qui ne donne pas des résultats intéressants.
     # Cepemndant, à partir de la versin 2.4 nous devrions utiliser la fonction ST_ForcePolygonCW qui est plus prometteuse.
-    sql = "SELECT ST_AsGeoJSON(ST_ForceRHR(ST_Transform(ST_GeomFromGeoJSON(:geom), :epsg)), :max_decimal, :pgis_option)"
+    sql = "SELECT ST_AsGeoJSON(ST_Reverse(ST_Transform(ST_GeomFromGeoJSON(:geom), :epsg)), :max_decimal, :pgis_option)"
     row = db.engine.execute(text(sql), geom=geojson, epsg=int(os.environ.get("GAPI_EPSG")), max_decimal=int(os.environ.get("GAPI_GEOJSON_MAX_DECIMAL")), pgis_option=int(os.environ.get("GAPI_GEOJSON_PGIS_OPTION"))).fetchone()
     reproj_geojson = str(row[0])
 
@@ -76,14 +76,11 @@ def convert_whatever_to_geojson( geometrie ):
 
     try:        
         if isinstance(geometrie, WKBElement):
-            feature = Feature(to_shape(geometrie))
-            geoJSON = json.loads(dumps(feature))
             
-            # On insére la projection dans le GeoJSON
-            epsg = "EPSG:{}".format(os.environ.get("GAPI_EPSG"))
-            geoJSON["crs"] = {'type':'name','properties':{'name':epsg}}
+            geojson = db.session.scalar(geometrie.ST_AsGeoJSON(int(os.environ.get("GAPI_GEOJSON_MAX_DECIMAL")), 
+                                                               int(os.environ.get("GAPI_GEOJSON_PGIS_OPTION"))))
             
-            return geoJSON
+            return json.loads(geojson)
 
         elif isinstance(geometrie, str):
             g = str(geometrie).upper()

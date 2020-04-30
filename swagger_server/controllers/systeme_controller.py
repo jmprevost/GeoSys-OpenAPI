@@ -78,8 +78,8 @@ def get_systeme_envs():  # noqa: E501
     """
     liste_envs = []
     liste_envs.append(SystemeEnvsEnvs(env="PRO", url="http://132.156.9.78:8080/geosys-api/v1/"))
-    liste_envs.append(SystemeEnvsEnvs(env="TST", url="http://132.156.9.78:8080/tst/geosys-api/v1/"))
-    liste_envs.append(SystemeEnvsEnvs(env="DEV", url="http://132.156.9.78:8080/dev/geosys-api/v1/"))
+    liste_envs.append(SystemeEnvsEnvs(env="TST", url="http://132.156.9.78:8080/geosys-api/v1/"))
+    liste_envs.append(SystemeEnvsEnvs(env="DEV", url="http://132.156.9.78:8080/geosys-api/v1/"))
     
     return jsonify(SystemeEnvs(envs=liste_envs).to_dict()), 200
 
