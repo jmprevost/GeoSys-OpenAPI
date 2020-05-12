@@ -17,9 +17,8 @@ import json
 
 import inspect
 from tzlocal import get_localzone
-from flask import make_response, jsonify
+from flask import make_response, jsonify, Response
 from swagger_server.controllers import suivi_prod_controller
-
 
 def message_erreur(exception, code):
     """message_erreur:
@@ -34,15 +33,26 @@ def message_erreur(exception, code):
     :rtype: response_class
     """
     
-    stack_list = []
-    for s in inspect.stack():
-        if str(s.filename).find("swagger_server") > -1: # on ne conserve que les appels concerant le code de l'API
-            # Chaque nouveau message est inséré au début de la liste
-            stack_list[:0] = [(str("File '{}', line {}, in '{}'").format(s.filename, s.lineno, s.function))]
-        else:
-            break
+    # Si l'exception est déjà passée par ici (cascade d'exception) alors elle contient déjà
+    # une description     # d'erreur formattée en réponse HTTP. Nous allons écraser la réponse
+    # précédente si nous en construisons     # une autre et ainsi perdre du détail. La première
+    # construction de la réponse est la plus exacte à propos de la nature de l'exception
+    if isinstance(exception.args[0], Response):
+        return exception.args[0]
     
-    return make_response(jsonify(type_erreur=str(type(exception)),message=str(exception), stack=stack_list), code)
+    # Construction de la réponse HTTP avec l'information de l'exception. Il n'y a pas eu encore de cascade
+    # d'exception. C'est la première (et peut-être la seule) réponse.
+    else:
+        stack_list = []
+
+        for s in inspect.stack():
+            if str(s.filename).find("swagger_server") > -1: # on ne conserve que les appels concerant le code de l'API
+                # Chaque nouveau message est inséré au début de la liste
+                stack_list[:0] = [(str("File '{}', line {}, in '{}'").format(s.filename, s.lineno, s.function))]
+            else:
+                break
+        
+        return make_response(jsonify(type_erreur=str(type(exception)),message=str(exception), stack=stack_list), code)
 
 def convert_code_to_name( liste_code ):
     """convert_code_to_name:

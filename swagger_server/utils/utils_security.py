@@ -1,3 +1,4 @@
+from swagger_server.utils import utils_gapi
 import base64
 import os
 from cryptography.fernet import Fernet
@@ -64,6 +65,6 @@ def auth_header_to_dict( auth_header ):
     try:
         token_content = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
     except Exception as e:
-        print (e)
+        raise Exception(utils_gapi.message_erreur(e, 400))
     
     return token_content

@@ -11,7 +11,6 @@ from swagger_server.config import db_view_session
 from flask import Response, request
 from flask import jsonify
 
-from swagger_server.utils import utils_gapi
 
 connex_app = config.connex_app
 connex_app.add_api('swagger.yaml', arguments={'title': 'geosys-api'}, pythonic_params=True)

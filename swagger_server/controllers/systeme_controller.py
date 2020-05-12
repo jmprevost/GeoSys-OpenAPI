@@ -22,6 +22,7 @@ import json
 import boto3
 import os
 from werkzeug.utils import secure_filename
+from swagger_server.utils import erreurs
 
 def delete_systeme_contenants(contenant_url):  # noqa: E501
     """delete_systeme_contenants
@@ -136,8 +137,8 @@ def get_systeme_liste_contenants_fichiers(contenant_url=None):  # noqa: E501
     result = s3_client.list_objects_v2(Bucket=os.environ.get("GAPI_AWS_S3_BUCKET_NAME"), Prefix=contenant_url, Delimiter='/')
     
     #Vérifie si le URL est bon
-    if result.get('KeyCount') == 0:
-        raise Exception(utils_gapi.message_erreur("Le URL: {} n'existe pas".format(contenant_url), 400))
+    if result.get('KeyCount') == 0:        
+        raise Exception(utils_gapi.message_erreur(erreurs.GAPIInvalidS3URL(contenant_url), 400))
     
     # Construction des listes des fichiers et des dossiers
     file_list = []

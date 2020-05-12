@@ -1,5 +1,6 @@
 from swagger_server.utils import utils_security
 from swagger_server.utils import utils_gapi
+from swagger_server.utils import erreurs
 
 import boto3
 import os
@@ -50,7 +51,7 @@ def check_s3_theme_access( themes, s3_path ):
     elif len(parts) > 4 and g.get("user_admin") == False:
         return set([parts[3]]).issubset(set(themes)) #retour True ou False
     else:
-        raise Exception(utils_gapi.message_erreur("Le thème figurant dans le url {} ne figure pas dans la liste des thèmes de l'usager {}".format(s3_path, themes), 400))
+        raise Exception(utils_gapi.message_erreur(erreurs.GAPIThemeURLAccessNotAllowed(s3_path, str(themes)), 400))
 
 def check_s3_obj_existance(s3_client, obj_url):
     """check_s3_obj_existance
@@ -69,7 +70,7 @@ def check_s3_obj_existance(s3_client, obj_url):
     
     #Vérifie si le URL est bon
     if result.get('KeyCount') == 0:
-        raise Exception(utils_gapi.message_erreur("Le URL: {} n'existe pas".format(obj_url), 400))
+        raise Exception(utils_gapi.message_erreur(erreurs.GAPIInvalidS3URL(obj_url), 400))
     
     return True
     
@@ -92,8 +93,7 @@ def get_s3_session(s3_url):
 
     # Vérification si l'usager a le droit d'accéder à URL
     if check_s3_theme_access( token_dict["theme_nom"], s3_url ) == False:
-        message = "Accès interdit! Vos thèmes permis sont: {}. Le URL que vous voulez accéder est: {}".format(token_dict["theme_nom"], s3_url)
-        raise Exception(utils_gapi.message_erreur(message, 400))
+        raise Exception(utils_gapi.message_erreur(erreurs.GAPIThemeURLAccessNotAllowed(s3_url, str(token_dict["theme_nom"])), 400))
 
     # Connexion à S3
     s3_session = boto3.session.Session(region_name = os.environ.get("GAPI_AWS_REGION"),
@@ -292,7 +292,9 @@ def upload_s3_multi_part(s3_client, fichier_url, contenu, bucket_name):
             s3_client.abort_multipart_upload(Bucket=bucket_name,
                                              Key=fichier_url,
                                              UploadId=mp['UploadId'])
-        raise e
+        
+        raise Exception(utils_gapi.message_erreur(e, 400))
+        
             
 def get_size(fobj):
     """get_size
@@ -317,7 +319,7 @@ def get_size(fobj):
         fobj.seek(pos)  # back to original position
         return size
     except (AttributeError, IOError) as e:
-        return e
+        raise Exception(utils_gapi.message_erreur(e, 400))
 
     # Si le fichier en mémoire ne supporte pas le seek et le tell
     return 0  # On suppose qu'il est petit
