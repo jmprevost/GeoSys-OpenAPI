@@ -11,6 +11,7 @@ from swagger_server import util
 # Ajoute manuellement. Ne provient pas du generateur de code
 from swagger_server.utils import utils_security
 from swagger_server.utils import utils_gapi
+from swagger_server.utils import erreurs
 from swagger_server.config import db
 from swagger_server.db_models.suivi_prod_db_schema import *
 from swagger_server.db_models.api_db_schema import *
@@ -30,36 +31,6 @@ from cryptography.fernet import InvalidToken
 
 import jwt
 from datetime import datetime, timedelta
-
-"""
-def password_checker(pwd_clair, pwd_encrypt):
-    pwd_clair = pwd_clair.encode()
-    pwd_encrypt = pwd_encrypt.encode()
-    salt = os.environ.get("GAPI_CRYPTO_SALT")
-    
-    # Creation de la cle d'encryption
-    kdf = PBKDF2HMAC(
-        algorithm=hashes.SHA256(),
-        length=32,
-        salt=salt.encode(),
-        iterations=int(os.environ.get("GAPI_CRYPTO_ITERATION")),
-        backend=default_backend()
-    )    
-    key = base64.urlsafe_b64encode(kdf.derive(pwd_clair))
-    
-    # Decryption du mot de passe encrypte passe en parametre et
-    # comparaison avec le mot de passe en clair pass� en parametre         
-    f = Fernet(key)
-    
-    try:
-        if f.decrypt(pwd_encrypt) == pwd_clair:
-            return True
-        else:
-            return False
-
-    except InvalidToken:
-        return False
-"""
 
 def delete_securite_usager_nom(nom):  # noqa: E501
     """delete_securite_usager_nom
@@ -100,15 +71,13 @@ def get_securite_login(usager=None, mot_de_passe=None, duree_token=None):  # noq
         MASerializer = UsagerSchema()
         user_data = MASerializer.dump(res)
     
-    except NoResultFound:
-        return GeneralMessage(message="No result found"), 400
-    except MultipleResultsFound:
-        return GeneralMessage(message="Too many results"), 400
+    except Exception as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))
     
-    # Validation du mot de passe obtenu de la BD
+    # Validation du mot de passe obtenu de la BD    
     encrypt_pwd = str(user_data['mot_de_passe'])
-    if not utils_security.password_checker(mot_de_passe, encrypt_pwd):
-        return GeneralMessage(message="Password not valid"), 400
+    if not utils_security.password_checker(mot_de_passe, encrypt_pwd):        
+        raise Exception(utils_gapi.message_erreur(erreurs.GAPIInvalidPassword(), 400))        
 
     # Construction du Token
     JWT_EXP_DELTA_SECONDS = int(duree_token)

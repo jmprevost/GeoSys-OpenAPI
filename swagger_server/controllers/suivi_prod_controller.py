@@ -29,7 +29,8 @@ from swagger_server.utils import utils_postgis
 from swagger_server.db_models.suivi_prod_db_schema import *
 import uuid
 from flask import jsonify
-#import json
+from swagger_server.utils import erreurs
+
 
 from swagger_server.config import db_view_session
 from sqlalchemy.sql import text
@@ -194,7 +195,7 @@ def get_suivi_prod_codes(categorie=None, nom=None, ident=None, id_list_codes=Non
         elif ident != None:
             codes = Code.query.filter(Code.id == ident).all()
         else:
-            raise Exception(utils_gapi.message_erreur("Tous les paramètres de /suivi-prod/codes sont null", 400))
+            raise Exception(utils_gapi.message_erreur(erreurs.GAPIAllParametersEndPointAreNull(), 400))
                 
         MASerializer = CodeSchema()
         liste_codes = []
@@ -227,10 +228,8 @@ def get_suivi_prod_codes_code(code):  # noqa: E501
         MASerializer = CodeSchema()
         code_json = MASerializer.dump(res)
     
-    except NoResultFound as e:
-        raise Exception(utils_gapi.message_erreur(e, 400))
-    except MultipleResultsFound as e:
-        raise Exception(utils_gapi.message_erreur(e, 400))
+    except Exception as e:
+        raise Exception(utils_gapi.message_erreur(e, 400))    
     
     return jsonify(code_json), 200
 
@@ -251,9 +250,7 @@ def get_suivi_prod_etape_ut_id(identifiant):  # noqa: E501
         MASerializer = EtapeUtSchema()
         etape_ut_json = MASerializer.dump(res)
     
-    except NoResultFound as e:
-        raise Exception(utils_gapi.message_erreur(e, 400))
-    except MultipleResultsFound as e:
+    except Exception as e:
         raise Exception(utils_gapi.message_erreur(e, 400))
     
     return jsonify(etape_ut_json), 200
@@ -279,7 +276,7 @@ def get_suivi_prod_featuretype_id(identifiant):  # noqa: E501
         rcoll = {}
         rcoll["RecordCollection"] = list_feat
 
-    except NoResultFound as e:
+    except Exception as e:
         raise Exception(utils_gapi.message_erreur(e, 400))    
     
     return jsonify(rcoll), 200
@@ -301,9 +298,7 @@ def get_suivi_prod_lot_id(identifiant, full_relation=None):  # noqa: E501
     try:
         lot = Lot.query.filter(Lot.id == identifiant).one()
         
-    except NoResultFound as e:
-        raise Exception(utils_gapi.message_erreur(e, 400))
-    except MultipleResultsFound as e:
+    except Exception as e:
         raise Exception(utils_gapi.message_erreur(e, 400))
     
     if full_relation == False: # Retourne le lot sans ses relations        
@@ -354,9 +349,7 @@ def get_suivi_prod_unite_travail_id(identifiant, full_relation=None):  # noqa: E
     try:
         ut = UniteTravail2.query.filter(UniteTravail2.id == identifiant).one()
         
-    except NoResultFound as e:
-        raise Exception(utils_gapi.message_erreur(e, 400))
-    except MultipleResultsFound as e:
+    except Exception as e:
         raise Exception(utils_gapi.message_erreur(e, 400))
     
     if full_relation == False: # Retourne l'unité de travail sans ses relations
@@ -408,7 +401,7 @@ def get_suivi_prod_unite_travail_listeid_theme_actif(theme):  # noqa: E501
 
         ret = GeneralListeValeur(value=liste_ut)        
 
-    except NoResultFound as e:
+    except Exception as e:
         raise Exception(utils_gapi.message_erreur(e, 400))
     
     return jsonify(ret.to_dict()), 200
@@ -457,8 +450,8 @@ def post_suivi_prod_requete_bd(body=None, output_format=None, simplifier=None): 
         # Lecture du body JSON qui contient la requête SQL
         if connexion.request.is_json:
             body = SuivProdRequeteSql.from_dict(connexion.request.get_json())  # noqa: E501
-        else:
-            raise ValueError("Le service attend un JSON valide contenant la requête SQL à exécuter")
+        else:            
+            raise Exception(utils_gapi.message_erreur(erreurs.GAPIInvalidJSONPayload(), 400))            
         
         # On s'assure qu'il n'y a pas de ";" à la fin de la requête SQL envotée par l'usager
         body.sql = str(body.sql).strip(";")
@@ -500,7 +493,7 @@ def post_suivi_prod_requete_bd(body=None, output_format=None, simplifier=None): 
 
             sql_template = sql_template.format(simplify_string, os.environ.get("GAPI_GEOJSON_MAX_DECIMAL"), os.environ.get("GAPI_GEOJSON_PGIS_OPTION"), geom_attr_name, body.sql )
         else:
-            raise ValueError("Format de sortie inconnue: {}".format(output_format))
+            raise Exception(utils_gapi.message_erreur(erreurs.GAPIUnknownOutputFormat(output_format), 400))
         
         # Lancement de la requête de l'usager vers la BD
         row = db_view_session.execute(text(sql_template)).fetchone()    
@@ -546,7 +539,7 @@ def post_suivi_prod_etape_ut(body=None):  # noqa: E501
         MASerializer = EtapeUtSchema()
         e_ut_json = MASerializer.dump(e_ut) 
 
-    except BaseException as e:
+    except Exception as e:
         raise Exception(utils_gapi.message_erreur(e, 400))
 
     return jsonify(e_ut_json), 200
@@ -583,7 +576,7 @@ def post_suivi_prod_featuretype(body=None):  # noqa: E501
         
         db.session.flush()
             
-    except BaseException as e:
+    except Exception as e:
         raise Exception(utils_gapi.message_erreur(e, 400))
 
     return jsonify(out_mess), 200
@@ -623,7 +616,7 @@ def post_suivi_prod_lot(body=None):  # noqa: E501
         db.session.add(lot)
         db.session.flush()
 
-    except BaseException as e:        
+    except Exception as e:        
         raise Exception(utils_gapi.message_erreur(e, 400))
 
     return jsonify(lot.as_dict()), 200
@@ -717,7 +710,7 @@ def post_suivi_prod_unite_travail(body=None):  # noqa: E501
         # Validation et reprojection de la géométrie
         body.geom = utils_postgis.validate_geometry(body.geom)
 
-        #conversion de la géométrie en EWKT
+        #conversion de la géométrie en EWKT. C'est parce que GeoAlchemy aime ça de même!
         wkt = utils_postgis.convert_geojson_to_wkt(utils_postgis.validate_geometry(body.geom))
         wkt = "SRID={};{}".format(os.environ.get("GAPI_EPSG"), wkt)
 
@@ -738,7 +731,7 @@ def post_suivi_prod_unite_travail(body=None):  # noqa: E501
         db.session.add(ut)
         db.session.flush()
 
-    except BaseException as e:        
+    except Exception as e:        
         raise Exception(utils_gapi.message_erreur(e, 400))
     
     return jsonify(ut.as_dict()), 200
@@ -778,7 +771,7 @@ def put_suivi_prod_etape_ut_id(identifiant, body=None):  # noqa: E501
         MASerializer = EtapeUtSchema()
         e_ut = MASerializer.dump(rs)        
 
-    except BaseException as e:
+    except Exception as e:
         raise Exception(utils_gapi.message_erreur(e, 400))
 
     return jsonify(e_ut), 200
@@ -814,7 +807,7 @@ def put_suivi_prod_lot_id(identifiant, body=None):  # noqa: E501
 
         db.session.flush()
 
-    except BaseException as e:
+    except Exception as e:
         raise Exception(utils_gapi.message_erreur(e, 400))
     
     return jsonify(rs.as_dict()), 200
@@ -849,7 +842,7 @@ def put_suivi_prod_unite_travail_id(identifiant, body=None):  # noqa: E501
 
         db.session.flush()
 
-    except BaseException as e:
+    except Exception as e:
         raise Exception(utils_gapi.message_erreur(e, 400))
 
     return jsonify(rs.as_dict()), 200
