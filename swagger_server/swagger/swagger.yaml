@@ -264,6 +264,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/systeme_ress_retour'
+      security:
+      - geosys_auth:
+        - read
       x-openapi-router-controller: swagger_server.controllers.systeme_controller
   /suivi-prod/codes:
     get:
