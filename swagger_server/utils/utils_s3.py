@@ -4,7 +4,7 @@ from swagger_server.utils import utils_gapi
 import boto3
 import os
 from werkzeug.utils import secure_filename
-from flask import request
+from flask import request, g
 import mimetypes
 
 def check_bucket_trailing_slash(contenant_url):
@@ -41,12 +41,16 @@ def check_s3_theme_access( themes, s3_path ):
     
     :rtype: Boolean
     """
-
+    
     parts = str(s3_path).split("/")
-    if len(parts) > 4:
+    if g.get("user_admin") == True:
+        return True # l'admin a tous les droits
+    elif g.get("all_themes") == True:
+        return True # l'usager a accès à tous les thèmes
+    elif len(parts) > 4 and g.get("user_admin") == False:
         return set([parts[3]]).issubset(set(themes)) #retour True ou False
     else:
-        return True
+        raise Exception(utils_gapi.message_erreur("Le thème figurant dans le url {} ne figure pas dans la liste des thèmes de l'usager {}".format(s3_path, themes), 400))
 
 def check_s3_obj_existance(s3_client, obj_url):
     """check_s3_obj_existance

@@ -258,9 +258,13 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/systeme_ress_requete'
+            examples: {}
         description: ''
       tags:
         - systeme
+      security:
+        - geosys_auth:
+            - read
   /suivi-prod/codes:
     get:
       summary: ''
@@ -498,6 +502,7 @@ paths:
       security:
         - geosys_auth:
             - read
+      requestBody: {}
     parameters:
       - schema:
           type: string
@@ -559,6 +564,7 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/suivi_prod-lot-full_rel'
                   - $ref: '#/components/schemas/suivi_prod-lot-no_rel'
+              examples: {}
       operationId: get-suivi-prod-lot-id
       description: Retrieve a record from Lot table. By using the parameter full_relation=False you can retreive only the Lot record or by using full_relation=True you can retreive the Lot and all its dependencies (related table records).
       parameters:
@@ -1520,6 +1526,7 @@ components:
           type: array
           items:
             type: string
+      description: ''
     suivi_prod_planification:
       title: suivi_prod_planification
       type: object

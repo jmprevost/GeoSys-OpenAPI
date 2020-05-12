@@ -209,9 +209,15 @@ def post_systeme_ressources_recherche(body=None, env=None):  # noqa: E501
 
     :rtype: SystemeRessRetour
     """
-    #if connexion.request.is_json:
-    #    body = SystemeRessRequete.from_dict(connexion.request.get_json())  # noqa: E501
+    if connexion.request.is_json:
+        body = SystemeRessRequete.from_dict(connexion.request.get_json())  # noqa: E501
+    else:
+        raise Exception(utils_gapi.message_erreur("Le service attend un JSON valide contenant la requête SQL à exécuter", 500))
 
+    for f in body.fichiers:
+        fichier = get_systeme_fichier(f)
+        print(fichier.data.decode())
+    
     ret = {"value":{"liste_classe":["waterbody_2", "water_linear_flow_1", "dam_2"]}}
 
     return jsonify(ret), 200
