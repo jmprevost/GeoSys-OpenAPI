@@ -33,15 +33,15 @@ def message_erreur(exception, code):
     :rtype: response_class
     """
     
-    # Si l'exception est déjà passée par ici (cascade d'exception) alors elle contient déjà
-    # une description     # d'erreur formattée en réponse HTTP. Nous allons écraser la réponse
-    # précédente si nous en construisons     # une autre et ainsi perdre du détail. La première
+    # Si l'exception est déjà passée par ici (cascade d'exceptions) alors elle contient déjà
+    # une description d'erreur formattée en réponse HTTP. Nous allons écraser la réponse
+    # précédente si nous en construisons une autre et ainsi perdre du détail. La première
     # construction de la réponse est la plus exacte à propos de la nature de l'exception
-    if isinstance(exception.args[0], Response):
+    if len(exception.args) > 0 and isinstance(exception.args[0], Response):
         return exception.args[0]
     
     # Construction de la réponse HTTP avec l'information de l'exception. Il n'y a pas eu encore de cascade
-    # d'exception. C'est la première (et peut-être la seule) réponse.
+    # d'exceptions. C'est la première (et peut-être la seule) réponse.
     else:
         stack_list = []
 

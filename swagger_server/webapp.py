@@ -8,13 +8,28 @@ from swagger_server.config import app
 from swagger_server.config import db
 from swagger_server.config import db_view_session
 
-from flask import Response, request
+from flask import Response, request, g
 from flask import jsonify
+import re
 
 
 connex_app = config.connex_app
 connex_app.add_api('swagger.yaml', arguments={'title': 'geosys-api'}, pythonic_params=True)
 connex_app.app.json_encoder = encoder.JSONEncoder
+
+@app.before_request
+def before_request_func():
+    # Peuple la variable globale de session g.user_lang avec la valeur transmise dans par
+    # l'usager dans l'entête de sa requête. "fr" est la valeur par défaut quand on ne 
+    # peut pas la déterminer à partir de la requête du client
+    lang = request.headers.get("Accept-Language")
+    if re.search("fr", lang, re.IGNORECASE) != None:
+        g.user_lang = "fr"
+    elif re.search("en|us|gb|ang", lang, re.IGNORECASE) != None:
+        g.user_lang = "en"
+    else:
+        g.user_lang = "fr"
+
 
 # Toute erreur de type Exception soulevée dans le code aboutira ici
 @app.errorhandler(Exception)

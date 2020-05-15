@@ -32,7 +32,11 @@ def validate_geometry( geojson ):
         # Pour l'instant, nous utilisons PostGIS 2.3.7 et la fonction ST_ForceRHR qui ne donne pas des résultats intéressants.
         # Cepemndant, à partir de la versin 2.4 nous devrions utiliser la fonction ST_ForcePolygonCW qui est plus prometteuse.
         sql = "SELECT ST_AsGeoJSON(ST_Reverse(ST_Transform(ST_GeomFromGeoJSON(:geom), :epsg)), :max_decimal, :pgis_option)"
-        row = db.engine.execute(text(sql), geom=geojson, epsg=int(os.environ.get("GAPI_EPSG")), max_decimal=int(os.environ.get("GAPI_GEOJSON_MAX_DECIMAL")), pgis_option=int(os.environ.get("GAPI_GEOJSON_PGIS_OPTION"))).fetchone()
+        row = db.engine.execute(    text(sql), 
+                                    geom=geojson, 
+                                    epsg=int(os.environ.get("GAPI_EPSG")), 
+                                    max_decimal=int(os.environ.get("GAPI_GEOJSON_MAX_DECIMAL")), 
+                                    pgis_option=int(os.environ.get("GAPI_GEOJSON_PGIS_OPTION"))).fetchone()
         reproj_geojson = str(row[0])
 
         # Verification si la geometrie repond au specs OGC. Verification apres la reprojection
@@ -46,6 +50,7 @@ def validate_geometry( geojson ):
         row = db.engine.execute(text(sql), geom = reproj_geojson).fetchone() 
         if int(row[0]) != 1:
             raise erreurs.GAPIMultiPolygonNotAllowed(str(row[0]))
+
     except Exception as e:
         raise Exception(utils_gapi.message_erreur(e, 400))
     
