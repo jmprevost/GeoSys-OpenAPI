@@ -59,6 +59,7 @@ def get_securite_login(usager=None, mot_de_passe=None, duree_token=None):  # noq
 
     :rtype: SecuriteReponseLogin
     """
+
     duree_token = 8000
     # Lecture des parametres de l'appel
     usager = request.headers.get("usager")

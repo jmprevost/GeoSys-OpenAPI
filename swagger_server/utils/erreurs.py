@@ -1,15 +1,17 @@
+from flask import g
+
 MessageDict = {
                 "GAPIInvalidPassword": 
-                    {"fr": "Le mot de passe est invalide tabarnak!",
+                    {"fr": "Le mot de passe est invalide",
                      "en": "Invalid password"},
 
                 "GAPIInvalidUserName": 
                     {"fr": "L'usager n'existe pas",
-                     "en": "User doesn't exist"},
+                     "en": "User does not exist"},
 
                 "GAPIInvalidS3URL": 
                     {"fr": "Le URL: {} n'existe pas",
-                     "en": "URL: {} doesn't exist"},
+                     "en": "URL: {} does not exist"},
 
                 "GAPIAllParametersEndPointAreNull": 
                     {"fr": "Tous les paramètres de l'appel sont null",
@@ -32,25 +34,27 @@ MessageDict = {
                      "en": "Multipolygons are not allowed. Your geometry contains {} polygons"},
 
                 "GAPIThemeURLAccessNotAllowed": 
-                    {"fr": "Le thème référencé dans le url: {} ne figure pas dans la liste des thèmes de l'utilisateur. Thèmes autorisée: {}",
-                     "en": "The theme referenced in the url: {} is not in the user's theme list. Themes allowed: {}"}
+                    {"fr": "Le thème référencé dans le url: {} ne figure pas dans la liste des thèmes de l'utilisateur. Les thèmes autorisée sont: {}",
+                     "en": "The theme referenced in the url: {} is not in the user's theme list. Themes allowed are: {}"}
               }
 
 class GAPIError(Exception):
     """Base class for other exceptions"""
     def __init__(self, *args):
-        self.args = args
+        self.args = []
+        if args:
+            self.args = args
 
-    def __str__(self):        
+    def __str__(self):
         if len(self.args) > 0:
-            message = MessageDict[self.__class__.__name__]["fr"]
+            message = MessageDict[self.__class__.__name__][g.user_lang]
             for arg in self.args:
                 message = message.replace("{}", arg, 1)
 
             return message
 
         else:
-            return MessageDict[self.__class__.__name__]["fr"]
+            return MessageDict[self.__class__.__name__][g.user_lang]
 
 class GAPIInvalidUserName(GAPIError):
     """Nom d'usager inconnu"""
