@@ -4,6 +4,8 @@ from sqlalchemy.orm import relationship
 from swagger_server.config import db, ma
 from marshmallow import fields
 
+from sqlalchemy.ext.associationproxy import association_proxy
+
 db.Model.metadata = MetaData(schema="jmp_api")
 
 class CleAw(db.Model):
@@ -14,71 +16,92 @@ class CleAw(db.Model):
     acces_secret = db.Column(db.String(50))
     desc = db.Column(db.String(256))
 
+    def __repr__(self):
+        return str(self.id)
+
 class CleAwSchema(ma.ModelSchema):
     class Meta:
         model = CleAw
         sqla_session = db.session
 
+# Tables de liens pour la relation many-to-many entre usager_geosys
+# et les vues créées à partir de la table de code du suivi de production 
+l_usager_equipe = db.Table('l_usager_equipe',
+    db.Column('usager_id', db.Integer, db.ForeignKey('usager_geosys.usager_id')),
+    db.Column('code_id', db.Integer, db.ForeignKey('v_codes_equipes.id'))
+)
 
-class LienUsagerEquipe(db.Model):
-    __tablename__ = 'lien_usager_equipe'
+l_usager_scope = db.Table('l_usager_scope',
+    db.Column('usager_id', db.Integer, db.ForeignKey('usager_geosys.usager_id')),
+    db.Column('code_id', db.Integer, db.ForeignKey('v_codes_scopes.id'))
+)
 
-    id = db.Column(db.String(50), primary_key=True, index=True)
-    nom_usager = db.Column(db.ForeignKey('usager.nom_usager'))    
-    code_id = db.Column(db.Integer)
-    
-class LienUsagerEquipeSchema(ma.ModelSchema):
-    class Meta:
-        model = LienUsagerEquipe
-        sqla_session = db.session
+l_usager_theme = db.Table('l_usager_theme',
+    db.Column('usager_id', db.Integer, db.ForeignKey('usager_geosys.usager_id')),
+    db.Column('code_id', db.Integer, db.ForeignKey('v_codes_themes.id'))
+)
 
+# Vues créées à partir de la table code du suivi de production.
+# Ce sont des sous-ensembles des thèmes, scopes et équipes
+class v_CodesThemes(db.Model):
+    __table__ = db.Table('v_codes_themes', db.Model.metadata,
+    db.Column('id', db.Integer, primary_key=True),
+    db.Column('id_liste_codes', db.Integer),
+    db.Column('nom', db.String(50)),
+    db.Column('desc_en', db.String(200)),
+    db.Column('desc_fr', db.String(200)),
+        autoload=True, autoload_with=db.get_engine()
+    )
 
-class LienUsagerScope(db.Model):
-    __tablename__ = 'lien_usager_scope'
+    def __repr__(self):
+        return str("{}-{}".format(self.id, self.nom))
 
-    id = db.Column(db.String(50), primary_key=True, index=True)
-    nom_usager = db.Column(db.ForeignKey('usager.nom_usager'))
-    code_id = db.Column(db.Integer)
-    
-class LienUsagerScopeSchema(ma.ModelSchema):
-    class Meta:
-        model = LienUsagerScope
-        sqla_session = db.session
+class v_CodesScopes(db.Model):
+    __table__ = db.Table('v_codes_scopes', db.Model.metadata,
+    db.Column('id', db.Integer, primary_key=True),
+    db.Column('id_liste_codes', db.Integer),
+    db.Column('nom', db.String(50)),
+    db.Column('desc_en', db.String(200)),
+    db.Column('desc_fr', db.String(200)),
+        autoload=True, autoload_with=db.get_engine()
+    )
 
+    def __repr__(self):
+        return str("{}-{}".format(self.id, self.nom))
 
-class LienUsagerTheme(db.Model):
-    __tablename__ = 'lien_usager_theme'
+class v_CodesEquipes(db.Model):
+    __table__ = db.Table('v_codes_equipes', db.Model.metadata,
+    db.Column('id', db.Integer, primary_key=True),
+    db.Column('id_liste_codes', db.Integer),
+    db.Column('nom', db.String(50)),
+    db.Column('desc_en', db.String(200)),
+    db.Column('desc_fr', db.String(200)),
+        autoload=True, autoload_with=db.get_engine()
+    )
 
-    id = db.Column(db.String(50), primary_key=True, index=True)
-    nom_usager = db.Column(db.ForeignKey('usager.nom_usager'))
-    code_id = db.Column(db.Integer, nullable=False)
-    
-class LienUsagerThemeSchema(ma.ModelSchema):
-    class Meta:
-        model = LienUsagerTheme
-        sqla_session = db.session
+    def __repr__(self):
+        return str("{}-{}".format(self.id, self.nom))
 
-class Usager(db.Model):
-    __tablename__ = 'usager'
-
-    nom_usager = db.Column(db.String(50), primary_key=True, index=True)
-    mot_de_passe = db.Column(db.String(100), nullable=False)
+# Définition de la table des usager geosys
+class UsagerGeosys(db.Model):
+    __tablename__ = 'usager_geosys'
+    usager_id = db.Column(db.Integer, primary_key=True)    
+    nom_usager = db.Column(db.String(50), unique=True)
+    mot_de_passe = db.Column(db.String(300), unique=True)
     cle_aws_id = db.Column(db.ForeignKey('cle_aws.id'))
+    themes = db.relationship("v_CodesThemes", secondary=l_usager_theme)
+    scopes = db.relationship("v_CodesScopes", secondary=l_usager_scope)
+    equipes = db.relationship("v_CodesEquipes", secondary=l_usager_equipe)
+    cle_aws = db.relationship('CleAw', primaryjoin='UsagerGeosys.cle_aws_id == CleAw.id')
 
-    cle_aws = relationship('CleAw', primaryjoin='Usager.cle_aws_id == CleAw.id')
-    scope = relationship('LienUsagerScope', primaryjoin='Usager.nom_usager == LienUsagerScope.nom_usager')
-    theme = relationship('LienUsagerTheme', primaryjoin='Usager.nom_usager == LienUsagerTheme.nom_usager')
-    equipe = relationship('LienUsagerEquipe', primaryjoin='Usager.nom_usager == LienUsagerEquipe.nom_usager')
-    
-
-class UsagerSchema(ma.ModelSchema):    
+class UsagerGeosysSchema(ma.ModelSchema):    
     ordered = False
     
     class Meta:
-        model = Usager
+        model = UsagerGeosys
         sqla_session = db.session
     
     cle_aws = fields.Nested('CleAwSchema', many=False)
-    scope = fields.Pluck('LienUsagerScopeSchema', 'code_id', many=True)
-    theme = fields.Pluck('LienUsagerThemeSchema', 'code_id', many=True)
-    equipe = fields.Pluck('LienUsagerEquipeSchema', 'code_id', many=True)
+    scope = fields.Pluck('v_CodesScopes', 'code_id', many=True)
+    theme = fields.Pluck('v_CodesThemes', 'code_id', many=True)
+    equipe = fields.Pluck('v_CodesEquipes', 'code_id', many=True)
