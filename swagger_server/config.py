@@ -7,6 +7,9 @@ from flask_cors import CORS
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
+from flask_admin import Admin
+
+
 os.environ["GAPI_PGIS_CONNECT_READ_ONLY_STRING"] = "postgresql://jmp_view:dev@v-she-olrik:14180/metriques_dev"
 
 engine_view = create_engine(os.environ.get("GAPI_PGIS_CONNECT_READ_ONLY_STRING"), convert_unicode=True)
@@ -57,3 +60,17 @@ db = SQLAlchemy(app, session_options={'autocommit': False})
 
 # Initialize Marshmallow
 ma = Marshmallow(app)
+
+
+
+
+
+# set optional bootswatch theme
+# see http://bootswatch.com/3/ for available swatches
+app.config['FLASK_ADMIN_SWATCH'] = 'cerulean'
+
+# Create dummy secrey key so we can use sessions
+app.config['SECRET_KEY'] = '123456790'
+
+# Create admin
+admin = Admin(app, 'Geosys Admin', template_mode='bootstrap3')

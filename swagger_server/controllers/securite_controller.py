@@ -68,8 +68,8 @@ def get_securite_login(usager=None, mot_de_passe=None, duree_token=None):  # noq
     
     # Requête dans la table d'usager
     try:
-        res = Usager.query.filter(Usager.nom_usager == usager).one()
-        MASerializer = UsagerSchema()
+        res = UsagerGeosys.query.filter(UsagerGeosys.nom_usager == usager).one()
+        MASerializer = UsagerGeosysSchema()
         user_data = MASerializer.dump(res)
     
     except Exception as e:
@@ -86,9 +86,9 @@ def get_securite_login(usager=None, mot_de_passe=None, duree_token=None):  # noq
     JWT_ALGORITHM = os.environ.get("GAPI_JWT_ALGORITHM")
     
     #Aller chercher dans la BD les noms équivalent aux codes
-    theme_nom = utils_gapi.convert_code_to_name(user_data["theme"])
-    scope_nom = utils_gapi.convert_code_to_name(user_data["scope"])
-    equipes_nom = utils_gapi.convert_code_to_name(user_data["equipe"])
+    themes_nom = utils_gapi.convert_code_to_name(user_data["themes"])
+    scopes_nom = utils_gapi.convert_code_to_name(user_data["scopes"])
+    equipes_nom = utils_gapi.convert_code_to_name(user_data["equipes"])
 
     payload = {
 	    "iat": datetime.utcnow(),
@@ -97,11 +97,11 @@ def get_securite_login(usager=None, mot_de_passe=None, duree_token=None):  # noq
 	    "iss": "NRCan",
         "sub": "1234567890",
         "nom_usager": user_data["nom_usager"],
-	    "scope": user_data["scope"],
-        "scope_nom": scope_nom,
-        "theme": user_data["theme"],
-        "theme_nom": theme_nom,
-        "equipes": user_data["equipe"],
+	    "scope": user_data["scopes"],
+        "scope_nom": scopes_nom,
+        "theme": user_data["themes"],
+        "theme_nom": themes_nom,
+        "equipes": user_data["equipes"],
         "equipes_nom": equipes_nom,
         "aws_access": user_data["cle_aws"]
     }
@@ -112,9 +112,9 @@ def get_securite_login(usager=None, mot_de_passe=None, duree_token=None):  # noq
     reponse = SecuriteReponseLogin( access_token=jwt_token.decode(), #La serialization en JSON n'accepte pas les bytes
                                     token_type="Bearer",
                                     expires_in=JWT_EXP_DELTA_SECONDS,
-                                    scope=user_data["scope"],
-                                    theme=user_data["theme"],
-                                    equipe=user_data["equipe"],
+                                    scope=user_data["scopes"],
+                                    theme=user_data["themes"],
+                                    equipe=user_data["equipes"],
                                     )
     
     return reponse
