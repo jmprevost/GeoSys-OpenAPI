@@ -1586,7 +1586,7 @@ paths:
               examples:
                 Requête contenant des étiquettes gsh:
                   value:
-                    texte: 'postgresql://skywalker:tatooine@132.156.18.220:14180/metriques_dev'
+                    texte: 'info à venir'
             application/xml:
               schema:
                 $ref: '#/components/schemas/systeme_cryptage_decryptage_retour'
@@ -1628,7 +1628,7 @@ paths:
             examples:
               Requête contenant des étiquettes gsh:
                 value:
-                  texte: 'postgresql://[gsh:gAAAAABfO_FRN-pSqa5_rrabEAK2Qta5_ML5xfBgYrnJHWcL2RPy1tIk6OK_6DEvBKZFG-0nzRue-J4X8ockR2q2Xj3WslW31Q==]:[gsh:gAAAAABfO_FRLi3_-UryrlQdmZXZ5MO3JZYfjLhPb_lGDkQLYA_tvZEvn5auBoUsQ8WXrJ23euxEQxfyApki36FWG_4S49XfrA==]@132.156.18.220:14180/metriques_dev'
+                  texte: 'bd://[gsh:gAAAAABfO_FRN-pSqa5_rrabEAK2Qta5_ML5xfBgYrnJHWcL2RPy1tIk6OK_6DEvBKZFG-0nzRue-J4X8ockR2q2Xj3WslW31Q==]:[gsh:gAAAAABfO_FRLi3_-UryrlQdmZXZ5MO3JZYfjLhPb_lGDkQLYA_tvZEvn5auBoUsQ8WXrJ23euxEQxfyApki36FWG_4S49XfrA==]@132.156.18.220:14180/metriques_dev'
                   cle_gsh: gAAAAABfM9Hv7XEEysFfYyWU32VV2-qlm_d7IV6YIbguatR1-MCN-RmpdDlJRkef-6cikXwvbtDovmFRI2lDCVtZBajBW5y2Bg==
         description: 'Un objet JSON contenant le texte à décrypter et la clé gsh. Le texte contient des étiquettes de la forme [gsh:<informations_cryptées>]'
   /systeme/cle_gsh:
