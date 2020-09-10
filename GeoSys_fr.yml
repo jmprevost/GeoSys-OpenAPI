@@ -8,78 +8,50 @@ info:
 servers:
   - url: 'http://localhost:8080/geosys-api/v1'
 paths:
-  /systeme/contenants:
+  /geodata-extract:
     post:
       summary: ''
+      operationId: post-geodata-extract
       responses:
-        '201':
-          description: Created
+        '200':
+          description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/general_message'
+      description: Extraction de donnée à sens unique. La donnée extraite ne reviendra pas.
+      security:
+        - geosys_bearer:
+            - read
+        - geosys_auth:
+            - read
       parameters:
         - schema:
             type: string
           in: query
-          name: contenant_url
-          required: true
-          description: URL identifiant le contenant.
-      operationId: post-systeme-contenants
-      description: "Création d'un contenant (bucket) pour le stockage de fichiers."
+          name: env_app
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/geodata_lecture'
+        description: ''
       tags:
-        - systeme
-      security:
-        - geosys_auth:
-            - write
-    delete:
-      summary: ''
-      responses:
-        '204':
-          description: No Content
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: contenant_url
-          required: true
-          description: URL identifiant le contenant.
-      description: "Efface un contenant (bucket) et les fichiers qu'il contient."
-      operationId: delete-systeme-contenants
-      tags:
-        - systeme
-      security:
-        - geosys_auth:
-            - delete
+        - data
     parameters: []
-  /systeme/fichiers:
+  '/geodata/{identifiant}':
+    parameters:
+      - schema:
+          type: string
+        name: identifiant
+        in: path
+        required: true
     post:
       summary: ''
+      operationId: post-geodata-identifiant
       responses:
         '201':
           description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-        '401':
-          description: Unauthorized
           content:
             application/json:
               schema:
@@ -88,95 +60,123 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/systeme_fichier'
+              $ref: '#/components/schemas/geodata_edition'
         description: ''
-      description: Téléverser un fichier.
-      operationId: post-systeme-fichier
+      tags:
+        - data
+      security:
+        - geosys_bearer:
+            - write
+        - geosys_auth:
+            - write
       parameters:
         - schema:
             type: string
-          in: query
-          name: contenant_url
-          required: true
-          description: Chemin complet du fichier.
+          in: header
+          name: env_app
+    put:
+      summary: ''
+      operationId: put-geodata-identifiant
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/geodata_edition'
+        description: ''
       tags:
-        - systeme
+        - data
       security:
+        - geosys_bearer:
+            - write
         - geosys_auth:
             - write
+      parameters:
+        - schema:
+            type: string
+          in: header
+          name: env_app
     get:
       summary: ''
+      operationId: get-geodata-identifiant
       responses:
         '200':
           description: OK
           content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-                description: Downloaded file as a stream of octet.
-              examples: {}
-        '401':
-          description: Unauthorized
-          content:
             application/json:
               schema:
                 $ref: '#/components/schemas/general_message'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: fichier_url
-          required: true
-          description: Chemin complet du fichier.
-      description: Récupère un fichier
-      operationId: get-systeme-fichier
       tags:
-        - systeme
+        - data
       security:
+        - geosys_bearer:
+            - read
+            - write
         - geosys_auth:
             - read
-    delete:
+            - write
+      description: ''
+      parameters:
+        - schema:
+            type: string
+          in: header
+          name: env_app
+  /meta/creer-md:
+    post:
       summary: ''
+      operationId: post-geosys-creer-md
       responses:
-        '204':
-          description: No Content
+        '200':
+          description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/general_message'
-        '401':
-          description: Unauthorized
+      description: Service intégrateur pour la création de métadonnées dans GeoSys.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/metadata_creation'
+      security:
+        - geosys_bearer:
+            - write
+        - geosys_auth:
+            - write
+      tags:
+        - meta
+    parameters: []
+  /meta/valider-md:
+    post:
+      summary: ''
+      operationId: post-geosys-valider-md
+      responses:
+        '200':
+          description: OK
           content:
             application/json:
               schema:
-                title: ReturnValue-BasicErrorMessage
-                type: object
-                properties:
-                  code:
-                    type: string
-                  message:
-                    type: string
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: fichier_url
-          required: true
-          description: Chemin complet du fichier.
-      description: Efface un fichier.
-      operationId: delete-systeme-fichier
+                $ref: '#/components/schemas/general_message'
+      description: "Service intégrateur pour la validation d'un fichier de métadonnées."
       tags:
-        - systeme
+        - meta
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/metadata_validation'
+        description: ''
       security:
+        - geosys_bearer:
+            - read
         - geosys_auth:
-            - delete
+            - read
     parameters: []
   /securite/login:
     get:
@@ -221,6 +221,7 @@ paths:
           name: usager
         - schema:
             type: string
+            format: password
           in: header
           name: mot_de_passe
           description: ''
@@ -229,42 +230,102 @@ paths:
             default: '3600'
           in: header
           name: duree_token
-          description: Dur�e de vie du token en secondes.
+          description: Durée de vie du token en secondes.
       operationId: get-securite-login
       description: Valide un usager et retourne un jeton (token).
       tags:
         - securite
     parameters: []
-  /systeme/ressources-recherche:
-    parameters: []
+  /securite/usager:
     post:
       summary: ''
-      operationId: post-systeme-ressources-recherche
+      operationId: post-securite-usager
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      description: "Ajouter un nouvel usager de l'API GeoSys."
+      security:
+        - geosys_bearer:
+            - admin
+        - geosys_auth:
+            - admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/usager'
+      tags:
+        - securite
+  '/securite/usager/{nom}':
+    get:
+      summary: ''
+      operationId: get-securite-usager-nom
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/systeme_ress_retour'
-      description: "Retourne une ressource (paramètre ou un groupe de paramètres) à partir d'une liste de fichier."
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: env
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/systeme_ress_requete'
-            examples: {}
-        description: ''
+                $ref: '#/components/schemas/general_message'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
       tags:
-        - systeme
+        - securite
       security:
+        - geosys_bearer:
+            - admin
         - geosys_auth:
-            - read
+            - admin
+    parameters:
+      - schema:
+          type: string
+        name: nom
+        in: path
+        required: true
+    delete:
+      summary: ''
+      operationId: delete-securite-usager-nom
+      responses:
+        '204':
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      security:
+        - geosys_bearer:
+            - admin
+        - geosys_auth:
+            - admin
+      description: ''
+      tags:
+        - securite
   /suivi-prod/codes:
     get:
       summary: ''
@@ -327,9 +388,35 @@ paths:
       tags:
         - suivi-prod
       security:
+        - geosys_bearer:
+            - read
         - geosys_auth:
             - read
     parameters: []
+  '/suivi-prod/codes/{code}':
+    parameters:
+      - schema:
+          type: string
+        name: code
+        in: path
+        required: true
+    get:
+      summary: ''
+      tags:
+        - suivi-prod
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/suivi_prod-code'
+      operationId: get-suivi-prod-codes-code
+      security:
+        - geosys_bearer:
+            - read
+        - geosys_auth:
+            - read
   /suivi-prod/codelist:
     get:
       summary: ''
@@ -362,9 +449,462 @@ paths:
       tags:
         - suivi-prod
       security:
+        - geosys_bearer:
+            - read
         - geosys_auth:
             - read
     parameters: []
+  /suivi-prod/etape-ut:
+    post:
+      summary: ''
+      operationId: post-suivi-prod-etape-ut
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      description: Insert a new record in etape_ut table.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod-etape_ut'
+      tags:
+        - suivi-prod
+      security:
+        - geosys_bearer:
+            - write
+        - geosys_auth:
+            - write
+    parameters: []
+  '/suivi-prod/etape-ut/{identifiant}':
+    get:
+      summary: Your GET endpoint
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/suivi_prod-etape_ut'
+              examples: {}
+      operationId: get-suivi-prod-etape-ut-id
+      description: Retrieve a record from etape_ut table.
+      tags:
+        - suivi-prod
+      security:
+        - geosys_bearer:
+            - read
+        - geosys_auth:
+            - read
+    parameters:
+      - schema:
+          type: string
+        name: identifiant
+        in: path
+        required: true
+    delete:
+      summary: ''
+      operationId: delete-suivi-prod-etape-ut-id
+      responses:
+        '204':
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      description: Delete a record in etape_ut table.
+      tags:
+        - suivi-prod
+      security:
+        - geosys_bearer:
+            - delete
+        - geosys_auth:
+            - delete
+    put:
+      summary: ''
+      operationId: put-suivi-prod-etape-ut-id
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      description: Update a record in etape_ut table.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod-etape_ut'
+        description: Only not null attributes in the JSON body will get updated. The id must not be empty.
+      tags:
+        - suivi-prod
+      security:
+        - geosys_bearer:
+            - write
+        - geosys_auth:
+            - write
+  /suivi-prod/featuretype:
+    post:
+      summary: ''
+      operationId: post-suivi-prod-featuretype
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      description: Insert feature class inside feature_type table.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/suivi_prod-featuretype'
+        description: ''
+      tags:
+        - suivi-prod
+      security:
+        - geosys_bearer:
+            - write
+        - geosys_auth:
+            - write
+    parameters: []
+  '/suivi-prod/featuretype/{identifiant}':
+    get:
+      summary: Your GET endpoint
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/suivi_prod-featuretype'
+      operationId: get-suivi-prod-featuretype-id
+      description: Retreive a record from feature_type table.
+      tags:
+        - suivi-prod
+      security:
+        - geosys_bearer:
+            - read
+        - geosys_auth:
+            - read
+    parameters:
+      - schema:
+          type: string
+        name: identifiant
+        in: path
+        required: true
+        description: ID from lot table
+    delete:
+      summary: ''
+      operationId: delete-suivi-prod-featuretype-id
+      responses:
+        '204':
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      description: Delete one record from feature_type table.
+      tags:
+        - suivi-prod
+      security:
+        - geosys_bearer:
+            - delete
+        - geosys_auth:
+            - delete
+  /suivi-prod/lot:
+    post:
+      summary: ''
+      operationId: post-suivi-prod-lot
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      description: Insert a record in Lot table.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod-lot-no_rel'
+      tags:
+        - suivi-prod
+      security:
+        - geosys_bearer:
+            - write
+        - geosys_auth:
+            - write
+    parameters: []
+  '/suivi-prod/lot/{identifiant}':
+    get:
+      summary: ''
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/suivi_prod-lot-full_rel'
+                  - $ref: '#/components/schemas/suivi_prod-lot-no_rel'
+              examples: {}
+      operationId: get-suivi-prod-lot-id
+      description: Retrieve a record from Lot table. By using the parameter full_relation=False you can retreive only the Lot record or by using full_relation=True you can retreive the Lot and all its dependencies (related table records).
+      parameters:
+        - schema:
+            type: boolean
+            default: 'False'
+            enum:
+              - 'True'
+              - 'False'
+          in: query
+          name: full_relation
+      tags:
+        - suivi-prod
+      security:
+        - geosys_bearer:
+            - read
+        - geosys_auth:
+            - read
+    parameters:
+      - schema:
+          type: string
+        name: identifiant
+        in: path
+        required: true
+    delete:
+      summary: ''
+      operationId: delete-suivi-prod-lot-id
+      responses:
+        '204':
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      description: Delete a record in Lot table.
+      tags:
+        - suivi-prod
+      security:
+        - geosys_bearer:
+            - delete
+        - geosys_auth:
+            - delete
+      parameters:
+        - schema:
+            type: boolean
+            enum:
+              - 'True'
+              - 'False'
+            default: 'False'
+          in: query
+          name: cascade
+    put:
+      summary: ''
+      operationId: put-suivi-prod-lot-id
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      description: Update a record in Lot table.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod-lot-no_rel'
+        description: Only not null attributes in the JSON body will get updated. The id must not be empty.
+      tags:
+        - suivi-prod
+      security:
+        - geosys_bearer:
+            - write
+        - geosys_auth:
+            - write
+  /suivi-prod/planification:
+    post:
+      summary: ''
+      operationId: post-suivi-prod-planification
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      description: "Service intégrateur permettant la création, selon un thème, d'un lot et d'une unité de travail en un seul appel."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod_planification'
+        description: ''
+      tags:
+        - suivi-prod
+      security:
+        - geosys_bearer:
+            - write
+        - geosys_auth:
+            - write
+  /suivi-prod/requete-bd:
+    post:
+      summary: ''
+      operationId: post-suivi-prod-requete-bd
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+      description: Permet de lancer une requete SQL au suivi de production et recevoir un JSON ou GeoJSON.
+      security:
+        - geosys_bearer:
+            - read
+        - geosys_auth:
+            - read
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - json
+              - geojson
+            default: json
+          in: query
+          name: output_format
+        - schema:
+            type: boolean
+            enum:
+              - 'True'
+              - 'False'
+            default: 'True'
+          in: query
+          name: simplifier
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod-requete_sql'
+        description: ''
+      tags:
+        - suivi-prod
+  '/suivi-prod/type-travail/theme/{theme}':
+    get:
+      summary: Your GET endpoint
+      tags:
+        - suivi-prod
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/suivi_prod-code'
+              examples:
+                exTypeTravailTheme_01:
+                  value:
+                    - id: 10801
+                      id_liste_code: 10800
+                      nom: RFN_50K_CREATION
+                      desc_en: id aute do commodo
+                      desc_fr: culpa anim
+                    - id: 10802
+                      id_liste_code: 10800
+                      nom: RFN_50K_MAJ
+                      desc_en: fugiat
+                      desc_fr: fugiat
+                    - id: 10803
+                      id_liste_code: 10800
+                      nom: RFN_50K_CORRECTION
+                      desc_en: et dolore eiusmod nostrud
+                      desc_fr: aute dolor
+      operationId: get-suivi-prod-type-travail-theme
+      description: Retourne une liste des travaux disponibles pour un thème donné.
+      security:
+        - geosys_bearer:
+            - read
+        - geosys_auth:
+            - read
+    parameters:
+      - schema:
+          type: string
+        name: theme
+        in: path
+        required: true
+  /suivi-prod/unite-travail:
+    post:
+      summary: ''
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      description: Insert a new record in unite_travail_2
+      operationId: post-suivi-prod-unite-travail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/suivi_prod-unite_travail_2-no_rel'
+        description: ''
+      tags:
+        - suivi-prod
+      security:
+        - geosys_bearer:
+            - write
+        - geosys_auth:
+            - write
+    parameters: []
+  '/suivi-prod/unite-travail/id/theme/actif/{theme}':
+    get:
+      summary: Your GET endpoint
+      tags:
+        - suivi-prod
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_liste_valeur'
+              examples:
+                exListeIDThemeActif_01:
+                  value:
+                    value:
+                      - corint_50k_123465453
+                      - corint_50k_555555555
+                      - corint_50k_777777777
+      operationId: get-suivi-prod-unite-travail-listeid-theme-actif
+      description: Retourne une liste de ID des unités de travail active selon un thème.
+      security:
+        - geosys_bearer:
+            - read
+        - geosys_auth:
+            - read
+    parameters:
+      - schema:
+          type: string
+        name: theme
+        in: path
+        required: true
   '/suivi-prod/unite-travail/{identifiant}':
     get:
       summary: ''
@@ -403,6 +943,8 @@ paths:
       tags:
         - suivi-prod
       security:
+        - geosys_bearer:
+            - read
         - geosys_auth:
             - read
     parameters:
@@ -426,6 +968,8 @@ paths:
       tags:
         - suivi-prod
       security:
+        - geosys_bearer:
+            - delete
         - geosys_auth:
             - delete
       parameters:
@@ -457,9 +1001,11 @@ paths:
       tags:
         - suivi-prod
       security:
+        - geosys_bearer:
+            - write
         - geosys_auth:
             - write
-  /suivi-prod/unite-travail:
+  /systeme/contenants:
     post:
       summary: ''
       responses:
@@ -469,127 +1015,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/general_message'
-      description: Insert a new record in unite_travail_2
-      operationId: post-suivi-prod-unite-travail
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/suivi_prod-unite_travail_2-no_rel'
-        description: ''
-      tags:
-        - suivi-prod
-      security:
-        - geosys_auth:
-            - write
-    parameters: []
-  '/suivi-prod/featuretype/{identifiant}':
-    get:
-      summary: Your GET endpoint
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/suivi_prod-featuretype'
-      operationId: get-suivi-prod-featuretype-id
-      description: Retreive a record from feature)type table.
-      tags:
-        - suivi-prod
-      security:
-        - geosys_auth:
-            - read
-      requestBody: {}
-    parameters:
-      - schema:
-          type: string
-        name: identifiant
-        in: path
-        required: true
-        description: ID from lot table
-    delete:
-      summary: ''
-      operationId: delete-suivi-prod-featuretype-id
-      responses:
-        '204':
-          description: No Content
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-      description: Delete one record from feature_type table.
-      tags:
-        - suivi-prod
-      security:
-        - geosys_auth:
-            - delete
-  /suivi-prod/featuretype:
-    post:
-      summary: ''
-      operationId: post-suivi-prod-featuretype
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-      description: Insert feature class inside feature_type table.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/suivi_prod-featuretype'
-        description: ''
-      tags:
-        - suivi-prod
-      security:
-        - geosys_auth:
-            - write
-    parameters: []
-  '/suivi-prod/lot/{identifiant}':
-    get:
-      summary: ''
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                oneOf:
-                  - $ref: '#/components/schemas/suivi_prod-lot-full_rel'
-                  - $ref: '#/components/schemas/suivi_prod-lot-no_rel'
-              examples: {}
-      operationId: get-suivi-prod-lot-id
-      description: Retrieve a record from Lot table. By using the parameter full_relation=False you can retreive only the Lot record or by using full_relation=True you can retreive the Lot and all its dependencies (related table records).
       parameters:
         - schema:
-            type: boolean
-            default: 'False'
-            enum:
-              - 'True'
-              - 'False'
+            type: string
           in: query
-          name: full_relation
+          name: contenant_url
+          required: true
+          description: URL identifiant le contenant.
+      operationId: post-systeme-contenants
+      description: "Création d'un contenant (bucket) pour le stockage de fichiers."
       tags:
-        - suivi-prod
+        - systeme
       security:
+        - geosys_bearer:
+            - write
         - geosys_auth:
-            - read
-    parameters:
-      - schema:
-          type: string
-        name: identifiant
-        in: path
-        required: true
+            - write
     delete:
       summary: ''
-      operationId: delete-suivi-prod-lot-id
       responses:
         '204':
           description: No Content
@@ -597,205 +1040,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/general_message'
-      description: Delete a record in Lot table.
-      tags:
-        - suivi-prod
-      security:
-        - geosys_auth:
-            - delete
-      parameters:
-        - schema:
-            type: boolean
-            enum:
-              - 'True'
-              - 'False'
-            default: 'False'
-          in: query
-          name: cascade
-    put:
-      summary: ''
-      operationId: put-suivi-prod-lot-id
-      responses:
-        '202':
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-      description: Update a record in Lot table.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/suivi_prod-lot-no_rel'
-        description: Only not null attributes in the JSON body will get updated. The id must not be empty.
-      tags:
-        - suivi-prod
-      security:
-        - geosys_auth:
-            - write
-  /suivi-prod/lot:
-    post:
-      summary: ''
-      operationId: post-suivi-prod-lot
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-      description: Insert a record in Lot table.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/suivi_prod-lot-no_rel'
-      tags:
-        - suivi-prod
-      security:
-        - geosys_auth:
-            - write
-    parameters: []
-  '/suivi-prod/etape-ut/{identifiant}':
-    get:
-      summary: Your GET endpoint
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/suivi_prod-etape_ut'
-              examples: {}
-      operationId: get-suivi-prod-etape-ut-id
-      description: Retrieve a record from etape_ut table.
-      tags:
-        - suivi-prod
-      security:
-        - geosys_auth:
-            - read
-    parameters:
-      - schema:
-          type: string
-        name: identifiant
-        in: path
-        required: true
-    delete:
-      summary: ''
-      operationId: delete-suivi-prod-etape-ut-id
-      responses:
-        '204':
-          description: No Content
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-      description: Delete a record in etape_ut table.
-      tags:
-        - suivi-prod
-      security:
-        - geosys_auth:
-            - delete
-    put:
-      summary: ''
-      operationId: put-suivi-prod-etape-ut-id
-      responses:
-        '202':
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-      description: Update a record in etape_ut table.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/suivi_prod-etape_ut'
-        description: Only not null attributes in the JSON body will get updated. The id must not be empty.
-      tags:
-        - suivi-prod
-      security:
-        - geosys_auth:
-            - write
-  /suivi-prod/etape-ut:
-    post:
-      summary: ''
-      operationId: post-suivi-prod-etape-ut
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-      description: Insert a new record in etape_ut table.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/suivi_prod-etape_ut'
-      tags:
-        - suivi-prod
-      security:
-        - geosys_auth:
-            - write
-    parameters: []
-  /meta/creer-md:
-    post:
-      summary: ''
-      operationId: post-geosys-creer-md
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-      description: Service intégrateur pour la création de métadonnées dans GeoSys.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/metadata_creation'
-      security:
-        - geosys_auth:
-            - write
-      tags:
-        - meta
-    parameters: []
-  /meta/valider-md:
-    post:
-      summary: ''
-      operationId: post-geosys-valider-md
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-      description: "Service intégrateur pour la validation d'un fichier de métadonnées."
-      tags:
-        - meta
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/metadata_validation'
-        description: ''
-      security:
-        - geosys_auth:
-            - read
-    parameters: []
-  '/securite/usager/{nom}':
-    get:
-      summary: ''
-      operationId: get-securite-usager-nom
-      responses:
-        '200':
-          description: OK
+        '400':
+          description: Bad Request
           content:
             application/json:
               schema:
@@ -806,279 +1052,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/general_message'
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-      tags:
-        - securite
-      security:
-        - geosys_auth:
-            - admin
-    parameters:
-      - schema:
-          type: string
-        name: nom
-        in: path
-        required: true
-    delete:
-      summary: ''
-      operationId: delete-securite-usager-nom
-      responses:
-        '204':
-          description: No Content
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-      security:
-        - geosys_auth:
-            - admin
-      description: ''
-      tags:
-        - securite
-  '/geodata/{identifiant}':
-    parameters:
-      - schema:
-          type: string
-        name: identifiant
-        in: path
-        required: true
-    post:
-      summary: ''
-      operationId: post-geodata-identifiant
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/geodata_edition'
-        description: ''
-      tags:
-        - data
-      security:
-        - geosys_auth:
-            - write
-      parameters:
-        - schema:
-            type: string
-          in: header
-          name: env_app
-    put:
-      summary: ''
-      operationId: put-geodata-identifiant
-      responses:
-        '202':
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/geodata_edition'
-        description: ''
-      tags:
-        - data
-      security:
-        - geosys_auth:
-            - write
-      parameters:
-        - schema:
-            type: string
-          in: header
-          name: env_app
-    get:
-      summary: ''
-      operationId: get-geodata-identifiant
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-      tags:
-        - data
-      security:
-        - geosys_auth:
-            - read
-            - write
-      description: ''
-      parameters:
-        - schema:
-            type: string
-          in: header
-          name: env_app
-  /geodata-extract:
-    post:
-      summary: ''
-      operationId: post-geodata-extract
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-      description: Extraction de donnée à sens unique. La donnée extraite ne reviendra pas.
-      security:
-        - geosys_auth:
-            - read
       parameters:
         - schema:
             type: string
           in: query
-          name: env_app
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/geodata_lecture'
-        description: ''
+          name: contenant_url
+          required: true
+          description: URL identifiant le contenant.
+      description: "Efface un contenant (bucket) et les fichiers qu'il contient."
+      operationId: delete-systeme-contenants
       tags:
-        - data
+        - systeme
+      security:
+        - geosys_bearer:
+            - delete
+        - geosys_auth:
+            - delete
     parameters: []
-  /suivi-prod/planification:
-    post:
-      summary: ''
-      operationId: post-suivi-prod-planification
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-      description: "Service intégrateur permettant la création, selon un thème, d'un lot et d'une unité de travail en un seul appel."
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/suivi_prod_planification'
-        description: ''
-      tags:
-        - suivi-prod
-      security:
-        - geosys_auth:
-            - write
-  /securite/usager:
-    post:
-      summary: ''
-      operationId: post-securite-usager
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_message'
-      description: "Ajouter un nouvel usager de l'API GeoSys."
-      security:
-        - geosys_auth:
-            - admin
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/usager'
-      tags:
-        - securite
-  '/suivi-prod/unite-travail/id/theme/actif/{theme}':
-    get:
-      summary: Your GET endpoint
-      tags:
-        - suivi-prod
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/general_liste_valeur'
-              examples:
-                exListeIDThemeActif_01:
-                  value:
-                    value:
-                      - corint_50k_123465453
-                      - corint_50k_555555555
-                      - corint_50k_777777777
-      operationId: get-suivi-prod-unite-travail-listeid-theme-actif
-      description: Retourne une liste de ID des unités de travail active selon un thème.
-      security:
-        - geosys_auth:
-            - read
-    parameters:
-      - schema:
-          type: string
-        name: theme
-        in: path
-        required: true
-  '/suivi-prod/type-travail/theme/{theme}':
-    get:
-      summary: Your GET endpoint
-      tags:
-        - suivi-prod
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/suivi_prod-code'
-              examples:
-                exTypeTravailTheme_01:
-                  value:
-                    - id: 10801
-                      id_liste_code: 10800
-                      nom: RFN_50K_CREATION
-                      desc_en: id aute do commodo
-                      desc_fr: culpa anim
-                    - id: 10802
-                      id_liste_code: 10800
-                      nom: RFN_50K_MAJ
-                      desc_en: fugiat
-                      desc_fr: fugiat
-                    - id: 10803
-                      id_liste_code: 10800
-                      nom: RFN_50K_CORRECTION
-                      desc_en: et dolore eiusmod nostrud
-                      desc_fr: aute dolor
-      operationId: get-suivi-prod-type-travail-theme
-      description: Retourne une liste des travaux disponibles pour un thème donné.
-      security:
-        - geosys_auth:
-            - read
-    parameters:
-      - schema:
-          type: string
-        name: theme
-        in: path
-        required: true
   /systeme/envs:
     get:
       summary: ''
@@ -1104,30 +1094,126 @@ paths:
       operationId: get-systeme-envs
       description: Retourne la liste des environnements existant dans le système Geosys.
       security:
+        - geosys_bearer:
+            - read
         - geosys_auth:
             - read
-  '/suivi-prod/codes/{code}':
-    parameters:
-      - schema:
-          type: string
-        name: code
-        in: path
-        required: true
+  /systeme/fichiers:
+    post:
+      summary: ''
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/systeme_fichier'
+        description: ''
+      description: Téléverser un fichier.
+      operationId: post-systeme-fichier
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: contenant_url
+          required: true
+          description: Chemin complet du fichier.
+      tags:
+        - systeme
+      security:
+        - geosys_bearer:
+            - write
+        - geosys_auth:
+            - write
     get:
       summary: ''
-      tags:
-        - suivi-prod
       responses:
         '200':
           description: OK
           content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                description: Downloaded file as a stream of octet.
+              examples: {}
+        '401':
+          description: Unauthorized
+          content:
             application/json:
               schema:
-                $ref: '#/components/schemas/suivi_prod-code'
-      operationId: get-suivi-prod-codes-code
+                $ref: '#/components/schemas/general_message'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: fichier_url
+          required: true
+          description: Chemin complet du fichier.
+      description: Récupère un fichier
+      operationId: get-systeme-fichier
+      tags:
+        - systeme
       security:
+        - geosys_bearer:
+            - read
         - geosys_auth:
             - read
+    delete:
+      summary: ''
+      responses:
+        '204':
+          description: No Content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                title: ReturnValue-BasicErrorMessage
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: fichier_url
+          required: true
+          description: Chemin complet du fichier.
+      description: Efface un fichier.
+      operationId: delete-systeme-fichier
+      tags:
+        - systeme
+      security:
+        - geosys_bearer:
+            - delete
+        - geosys_auth:
+            - delete
+    parameters: []
   /systeme/liste-contenants-fichiers:
     get:
       summary: ''
@@ -1164,319 +1250,742 @@ paths:
           in: query
           name: contenant_url
       security:
+        - geosys_bearer:
+            - read
         - geosys_auth:
             - read
       description: Renvoi la liste des fichiers et répertoires existants sous un URL donné dans Amazon S3.
-  /suivi-prod/requete-bd:
+  /systeme/ressources-recherche:
+    parameters: []
     post:
-      summary: ''
-      operationId: post-suivi-prod-requete-bd
+      summary: 'Extraire des ressources à partir de chemins "xmlpath" dans un fichier json ou xml'
+      operationId: post-systeme-ressources-recherche
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties: {}
-      description: Permet de lancer une requete SQL au suivi de production et recevoir un JSON ou GeoJSON.
-      security:
-        - geosys_auth:
-            - read
+                $ref: '#/components/schemas/systeme_ress_retour'
+              examples:
+                Résultat simple (chaîne):
+                  value:
+                    /ressources/pro/applications/cits_fme:
+                      source: dev/ressources/general/ressources_CCCOT.json
+                      value: "CALL \\\\dfscitsh\\cits\\EnvCits\\applications\\cits\\pro\\bat\\fme.bat %FME2019%"
+                Résultat multiple (chaîne):
+                  value:
+                    /ressources/pro/applications/cits_fme:
+                      source: /dev/ressources/general/ressources_CCCOT.json
+                      value: "CALL \\\\dfscitsh\\cits\\EnvCits\\applications\\cits\\pro\\bat\\fme.bat %FME2019%"
+                    ressources/pro/applications/saxon_java_path:
+                      source: /dev/ressources/general/ressources_CCCOT.json
+                      value: "\\\\dfscitsh.cits.rncan.gc.ca\\cits\\EnvCits\\java\\pro\\Saxon-EE\\saxon9ee.jar"
+                Résultat (objet JSON):
+                  value:
+                    /ressources/pro/connexion_bdg_prod:
+                      source: /dev/ressources/general/ressources_CCCOT.json
+                      value:
+                        username: bdg
+                        connexion_file: "\\\\dfscitsh\\cits\\EnvCits\\applications\\connexions_bd\\alias[PROD_PRO]_type[2T].sde"
+                        instance: PROD_PRO
+                        password: pro
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_erreur'
+              examples:
+                Ressource introuvable:
+                  value:
+                    exception: "<class 'swagger_server.utils.erreurs.GAPIResourceNotFound'>"
+                    message: La ressource /ressources/pro/applications/cits_fme est introuvable
+                    stack:
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\controllers\\systeme_controller.py', line 266, in 'post_systeme_ressources_recherche'"
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\utils\\utils_gapi.py', line 49, in 'message_erreur'"
+                    traceback:
+                      - 'swagger_server.utils.erreurs.GAPIResourceNotFound: La ressource /ressources/pro/applications/cits_fme est introuvable'
+                      - ''
+                Fichier introuvable:
+                  value:
+                    exception: "<class 'botocore.exceptions.ClientError'>"
+                    message: 'An error occurred (404) when calling the HeadObject operation: Not Found : dev/ressources/general/ressources_CCCOT_1.json'
+                    stack:
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\controllers\\systeme_controller.py', line 241, in 'post_systeme_ressources_recherche'"
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\controllers\\systeme_controller.py', line 110, in 'get_systeme_fichier'"
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\utils\\utils_s3.py', line 197, in 'get_s3_object'"
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\utils\\utils_s3.py', line 179, in 'get_s3_object_head'"
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\utils\\utils_gapi.py', line 49, in 'message_erreur'"
+                    traceback:
+                      - 'Traceback (most recent call last):'
+                      - "  File \"D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\utils\\utils_s3.py\", line 177, in get_s3_object_head"
+                      - '    "GAPI_AWS_S3_BUCKET_NAME"), Key=fichier_url)'
+                      - "  File \"d:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\env\\lib\\site-packages\\botocore\\client.py\", line 316, in _api_call"
+                      - '    return self._make_api_call(operation_name, kwargs)'
+                      - "  File \"d:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\env\\lib\\site-packages\\botocore\\client.py\", line 626, in _make_api_call"
+                      - '    raise error_class(parsed_response, operation_name)'
+                      - 'botocore.exceptions.ClientError: An error occurred (404) when calling the HeadObject operation: Not Found'
+                      - ''
+                Accès non autorisé:
+                  value:
+                    exception: "<class 'swagger_server.utils.erreurs.GAPIThemeURLAccessNotAllowed'>"
+                    message: "Le thème référencé dans le url: dev/ressources/admin/geosys.json ne figure pas dans la liste des thèmes de l'utilisateur. Les thèmes autorisée sont: ['AUTO_BUILDING', 'CORINT_250K', 'HYDRO_50K']"
+                    stack:
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\controllers\\systeme_controller.py', line 241, in 'post_systeme_ressources_recherche'"
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\controllers\\systeme_controller.py', line 102, in 'get_systeme_fichier'"
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\utils\\utils_s3.py', line 97, in 'get_s3_session'"
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\utils\\utils_s3.py', line 56, in 'check_s3_theme_access'"
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\utils\\utils_gapi.py', line 49, in 'message_erreur'"
+                    traceback:
+                      - "swagger_server.utils.erreurs.GAPIThemeURLAccessNotAllowed: Le thème référencé dans le url: dev/ressources/admin/geosys.json ne figure pas dans la liste des thèmes de l'utilisateur. Les thèmes autorisée sont: ['AUTO_BUILDING', 'CORINT_250K', 'HYDRO_50K']"
+                      - ''
+                Type de fichier invalide:
+                  value:
+                    exception: "<class 'swagger_server.utils.erreurs.GAPIResourceInvalidFileType'>"
+                    message: 'Type de fichier invalide : dev/ressources/general/ressources_CCCOT.txt. JSON ou XML attendu'
+                    stack:
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\controllers\\systeme_controller.py', line 241, in 'post_systeme_ressources_recherche'"
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\utils\\utils_gapi.py', line 49, in 'message_erreur'"
+                    traceback:
+                      - 'swagger_server.utils.erreurs.GAPIResourceInvalidFileType: Type de fichier invalide : dev/ressources/general/ressources_CCCOT.txt. JSON ou XML attendu'
+                      - ''
+                Contenu du fichier JSON invalide:
+                  value:
+                    exception: "<class 'swagger_server.utils.erreurs.GAPIResourceInvalidJsonData'>"
+                    message: Données JSON invalide dans le fichier dev/ressources/general/ressources_CCCOT.json
+                    stack:
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\controllers\\systeme_controller.py', line 247, in 'post_systeme_ressources_recherche'"
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\utils\\utils_ress.py', line 128, in 'parse'"
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\utils\\utils_gapi.py', line 49, in 'message_erreur'"
+                    traceback:
+                      - 'swagger_server.utils.erreurs.GAPIResourceInvalidJsonData: Données JSON invalide dans le fichier dev/ressources/general/ressources_CCCOT.json'
+                      - ''
+                Contenu du fichier XML invalide:
+                  value:
+                    exception: "<class 'swagger_server.utils.erreurs.GAPIResourceInvalidXmlData'>"
+                    message: Données XML invalide dans le fichier dev/ressources/general/ressources_CCCOT.xml
+                    stack:
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\controllers\\systeme_controller.py', line 247, in 'post_systeme_ressources_recherche'"
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\utils\\utils_ress.py', line 125, in 'parse'"
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\utils\\utils_gapi.py', line 49, in 'message_erreur'"
+                    traceback:
+                      - 'swagger_server.utils.erreurs.GAPIResourceInvalidXmlData: Données XML invalide dans le fichier dev/ressources/general/ressources_CCCOT.xml'
+                      - ''
+                JSON invalide:
+                  value:
+                    type: 'about:blank'
+                    title: Bad Request
+                    detail: Request body is not valid JSON
+                    status: 400
+      description: "Retourne une ou plusieurs ressources (paramètre ou un groupe de paramètres) lues dans des fichiers JSON ou XML localisés dans le bucket S3 de GeoSys. La recherche des chemins du style \"xmlpath\" se fait de façon séquentielle dans chaque fichier spécifié (dans l'ordre). La première occurrence de la ressource dans la liste des fichiers est retenue. Si la valeur du chemin spécifié contient plusieurs éléments, ils sont tous retournés sous la forme d'un objet JSON.\n\nSi les valeurs récupérées contiennent des informations cryptées dans des étiquettes de la forme [gsh:<informations_cryptées>], il est possible de les décrypter au moment de l'extraction en spécifiant la clé gsh.\n\nL'utilisateur doit avoir un droit d'accès au dossier des fichiers pour extraire les ressources. \n\n"
       parameters:
         - schema:
-            type: string
-            enum:
-              - json
-              - geojson
-            default: json
-          in: query
-          name: output_format
-        - schema:
             type: boolean
+            default: 'False'
             enum:
               - 'True'
               - 'False'
-            default: 'True'
           in: query
-          name: simplifier
+          name: chercher_geosys
+          description: Fanion indiquant de chercher les ressources dans le fichier de ressource de GeoSys si elles sont introuvables dans les fichiers spécifiés
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/suiv_prod-requete_sql'
-        description: ''
+              $ref: '#/components/schemas/systeme_ress_requete'
+            examples:
+              Requête simple:
+                value:
+                  fichiers:
+                    - dev/ressources/general/ressources_CCCOT.json
+                  chemin_recherche:
+                    - /ressources/pro/applications/cits_fme
+              Requête avec fichiers multiples:
+                value:
+                  fichiers:
+                    - dev/ressources/themes/HYDRO_50K/ress_01.json
+                    - dev/ressources/themes/HYDRO_50K/ress_02.json
+                    - dev/ressources/themes/HYDRO_50K/ress_03.json
+                    - /dev/ressources/general/ressources_CCCOT.json
+                  chemin_recherche:
+                    - /ressources/pro/applications/cits_fme
+              Requête avec chemins multiples:
+                value:
+                  fichiers:
+                    - /dev/ressources/general/ressources_CCCOT.json
+                  chemin_recherche:
+                    - /ressources/pro/applications/cits_fme
+                    - ressources/pro/applications/saxon_java_path
+              'Recherche dans les ressources GeoSys seulement (paramètre "chercher_geosys=True")':
+                value:
+                  fichiers: []
+                  chemin_recherche:
+                    - /ressources/pro/applications/cits_fme
+                    - ressources/pro/applications/saxon_java_path
+              Requête avec décryptage gsh:
+                value:
+                  fichiers:
+                    - dev/ressources/general/ressources_CCCOT.json
+                  chemin_recherche:
+                    - /ressources/pro/database/password
+                  cle_gsh: gAAAAABfM9Hv7XEEysFfYyWU32VpdDlJRkef-6cikXwvbtDovmFRI2lDV2-qlm_d7IV6YIbguatR1-MCN-RmCVtZBajBW5y2Bg==
+        description: "Un objet JSON contenant une liste des fichiers à lire ainsi qu'une liste de chemins à chercher dans ceux-ci. Il faut spécifier le chemin complet des fichiers. Les chemins et fichiers peuvent avoir ou non des barres obliques au début et à la fin."
       tags:
-        - suivi-prod
+        - systeme
+      security:
+        - geosys_bearer:
+            - read
+        - geosys_auth:
+            - read
+  /systeme/cryptage:
+    post:
+      summary: Crypter du texte avec une clé gsh
+      operationId: post-systeme-cryptage
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/systeme_cryptage_decryptage_retour'
+              examples:
+                Requête de cryptage:
+                  value:
+                    texte: gAAAAABfO9iq54ZWJBK-k7gkOV-hnIX4b8cLXs0SDhm2PBXSnJN1oBmtEPJD02oDQWkUV3NqydldrL4Zs6ju5kU5gLB2bKHose2Y3ij7a6IityD87DcSVH0=
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+              examples:
+                Exemple:
+                  value:
+                    type: 'about:blank'
+                    title: Bad Request
+                    detail: "'texte' is a required property"
+                    status: 400
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      description: Retourne la version cryptée du texte spécifié en se basant sur la clé fournie.
+      security:
+        - geosys_bearer:
+            - read
+        - geosys_auth:
+            - read
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/systeme_cryptage_decryptage_requete'
+            examples:
+              Requête de cryptage:
+                value:
+                  texte: "Cat's foot iron claw"
+                  cle_gsh: gAAAAABfM9Hv7XEEysFfYyWU32VV2-qlm_d7IV6YIbguatR1-MCN-RmpdDlJRkef-6cikXwvbtDovmFRI2lDCVtZBajBW5y2Bg==
+        description: Un objet JSON contenant le texte à crypter et la clé gsh.
+      tags:
+        - systeme
+  /systeme/decryptage:
+    post:
+      summary: Décrypter du texte avec une clé gsh
+      operationId: post-systeme-decryptage
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/systeme_cryptage_decryptage_retour'
+              examples:
+                Requête de décryptage:
+                  value:
+                    texte: "Cat's foot iron claw"
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+              examples:
+                Exemple:
+                  value:
+                    type: 'about:blank'
+                    title: Bad Request
+                    detail: "'texte' is a required property"
+                    status: 400
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      description: Retourne la version décryptée du texte spécifié en se basant sur la clé fournie.
+      tags:
+        - systeme
+      security:
+        - geosys_bearer:
+            - read
+        - geosys_auth:
+            - read
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/systeme_cryptage_decryptage_requete'
+            examples:
+              Requête de décyptage:
+                value:
+                  texte: gAAAAABfO9iq54ZWJBK-k7gkOV-hnIX4b8cLXs0SDhm2PBXSnJN1oBmtEPJD02oDQWkUV3NqydldrL4Zs6ju5kU5gLB2bKHose2Y3ij7a6IityD87DcSVH0=
+                  cle_gsh: gAAAAABfM9Hv7XEEysFfYyWU32VV2-qlm_d7IV6YIbguatR1-MCN-RmpdDlJRkef-6cikXwvbtDovmFRI2lDCVtZBajBW5y2Bg==
+        description: Un objet JSON contenant le texte à décrypter et la clé gsh.
+    parameters: []
+  /systeme/decryptage_gsh:
+    parameters: []
+    post:
+      summary: Décrypter les étiquettes gsh dans du texte
+      operationId: post-systeme-decryptage_gsh
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/systeme_cryptage_decryptage_retour'
+              examples:
+                Requête contenant des étiquettes gsh:
+                  value:
+                    texte: 'postgresql://skywalker:tatooine@132.156.18.220:14180/metriques_dev'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/systeme_cryptage_decryptage_retour'
+              examples:
+                Requête contenant des étiquettes gsh: {}
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+              examples:
+                Exemple:
+                  value:
+                    type: 'about:blank'
+                    title: Bad Request
+                    detail: "'texte' is a required property"
+                    status: 400
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      description: 'Retourne la version modifiée du texte spécifié où les étiquettes de la forme [gsh:<informations_cryptées>] ont été décryptées en se basant sur la clé fournie.'
+      tags:
+        - systeme
+      security:
+        - geosys_bearer:
+            - read
+        - geosys_auth:
+            - read
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/systeme_cryptage_decryptage_requete'
+            examples:
+              Requête contenant des étiquettes gsh:
+                value:
+                  texte: 'postgresql://[gsh:gAAAAABfO_FRN-pSqa5_rrabEAK2Qta5_ML5xfBgYrnJHWcL2RPy1tIk6OK_6DEvBKZFG-0nzRue-J4X8ockR2q2Xj3WslW31Q==]:[gsh:gAAAAABfO_FRLi3_-UryrlQdmZXZ5MO3JZYfjLhPb_lGDkQLYA_tvZEvn5auBoUsQ8WXrJ23euxEQxfyApki36FWG_4S49XfrA==]@132.156.18.220:14180/metriques_dev'
+                  cle_gsh: gAAAAABfM9Hv7XEEysFfYyWU32VV2-qlm_d7IV6YIbguatR1-MCN-RmpdDlJRkef-6cikXwvbtDovmFRI2lDCVtZBajBW5y2Bg==
+        description: 'Un objet JSON contenant le texte à décrypter et la clé gsh. Le texte contient des étiquettes de la forme [gsh:<informations_cryptées>]'
+  /systeme/cle_gsh:
+    post:
+      summary: Générer une clé gsh pour le cryptage et décryptage de texte
+      operationId: post-systeme-cle_gsh
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/systeme_crypto_cle_gsh_retour'
+              examples:
+                Obtention de la clé gsh:
+                  value:
+                    cle_gsh: gAAAAABfO_axZjmA3FrxXsimxJFuBYrJTiV0TL96_Fkhbw5ygvlV_1C5u9I3rijwun5B_tMeyZkcuzoh_R2s21s1yfQSS0Upk4gHwWXjuCO1YSPCEcgJcwc=
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+              examples:
+                Exemple:
+                  value:
+                    type: 'about:blank'
+                    title: Bad Request
+                    detail: "'texte' is a required property"
+                    status: 400
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      tags:
+        - systeme
+      security:
+        - geosys_bearer:
+            - read
+        - geosys_auth:
+            - read
+      description: "Retourne une clé de cryptage basée sur un texte. La clé pourra ensuite être utilsée pour crypter et décrypter du texte. Elle fonctionnera seulement dans les services de l'API GeoSys."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/systeme_crypto_cle_gsh_requete'
+            examples:
+              Obtention de la clé gsh:
+                value:
+                  texte: 21st Century Schizoid Man
+        description: Un objet JSON contenant le texte qui sera utilisé pour générer la clé gsh.
+  /systeme/tache:
+    post:
+      summary: "Insérer les informations d'une tâche dans la table des tâches"
+      tags:
+        - systeme
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/systeme_tache_retour'
+              examples:
+                Exemple:
+                  value:
+                    id: GST123
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_erreur'
+      operationId: post-tache
+      security:
+        - geosys_bearer: []
+        - geosys_auth:
+            - read
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/systeme_tache_requete'
+            examples:
+              Tâche avec toutes les informations:
+                value:
+                  statut: REUSSITE
+                  categorie: FME
+                  etiquette: API
+                  env: DEV
+                  adresse_exec: 's-she-fmetst:8080'
+                  id_exec: '2348'
+                  courriel: jean.huot@canada.ca
+                  equipe: HYDRO
+                  info_json: "{\r\n\"commande\":\"https://geosys-api/envoyer_message\",\r\n \"sujet\": \"CORINT_50K_20180416_CJH3.zip\",\r\n \"destinataire\": \"saul.goodman@canada.ca\",\r\n \"expediteur\": \"Système GeoSys/GeoSys System\"\r\n}"
+                  info_texte: '<h4>Le traitement de CORINT_50K_20180416_CJH3 est terminé.<br/><br/> Vous pouvez récupérer le fichier résultant en cliquant sur le lien suivant : <a href="https://s3/dev/corint_50k/CORINT_50K_20180416_CJH3.zip">CORINT_50K_20180416_CJH3.zip</a>'
+                  commentaire: "Test d'envoi de courriel"
+              "Tâche avec un minimum d'information":
+                value:
+                  etiquette: '{92876270-eb83-11ea-aedd-04d9f5aa728b}'
+                  info_json: "{\r\n\"commande\":\"https://geosys-api/envoyer_message\",\r\n \"sujet\": \"CORINT_50K_20180416_CJH3.zip\",\r\n \"destinataire\": \"saul.goodman@canada.ca\",\r\n \"expediteur\": \"Système GeoSys/GeoSys System\"\r\n}"
+                  commentaire: '{PREP}'
+        description: Un objet JSON contenant les informations à insérer dans la table des tâches
+      description: "Permet d'insérer des informations dans la table des tâches GeoSys. "
+    parameters: []
+  '/systeme/tache/{id_tache}':
+    parameters:
+      - schema:
+          type: string
+        name: id_tache
+        in: path
+        required: true
+    put:
+      summary: "Mettre à jour les informations d'une tâche"
+      operationId: put-systeme-tache-id
+      security:
+        - geosys_bearer: []
+        - geosys_auth:
+            - read
+      tags:
+        - systeme
+      description: "Permet de mettre à jour les informations d'une tâche dans la table des tâches GeoSys. "
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/systeme_tache_id_requete'
+            examples:
+              Fermeture:
+                value:
+                  active: false
+              Fermeture avec commentaire:
+                value:
+                  active: false
+                  statut: RÉUSSITE
+                  commentaire: Message envoyé
+              Mise à jour du commentaire:
+                value:
+                  commentaire: "Le traitement s'exécute sur le serveur xyz"
+        description: Un objet JSON contenant les informations de la tâche à mettre à jour dans la table des tâches
+      responses:
+        '200':
+          description: Opération réussie
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_erreur'
+    get:
+      summary: "Obtenir les informations d'une tâche"
+      operationId: get-systeme-tache-id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/systeme_tache_info'
+              examples:
+                Tâche trouvée:
+                  value:
+                    categorie: categorie
+                    info_texte: info_texte
+                    id_exec: id_exec
+                    active: active
+                    env: env
+                    courriel: courriel
+                    adresse_exec: adresse_exec
+                    etiquette: etiquette
+                    id: id
+                    equipe: equipe
+                    info_json: info_json
+                    commentaire: commentaire
+                    statut: statut
+                Aucune tâche ne correspond au ID:
+                  value: {}
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_erreur'
+              examples:
+                ID introuvable:
+                  value:
+                    exception: "<class 'swagger_server.utils.erreurs.GAPIIdTacheIntrouvable'>"
+                    message: Le ID de tâche GST33 est introuvable dans la table des tâches
+                    stack:
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\controllers\\systeme_controller.py', line 200, in 'get_systeme_tache_id'"
+                      - "File 'D:\\cits\\EnvCits\\Developpement\\jhuot\\GCCode\\api-rest\\swagger_server\\utils\\utils_gapi.py', line 49, in 'message_erreur'"
+                    traceback:
+                      - 'swagger_server.utils.erreurs.GAPIIdTacheIntrouvable: Le ID de tâche GST33 est introuvable dans la table des tâches'
+                      - ''
+      description: "Obtenir les informations d'une tâche spécifique à partir de son ID dans la table des tâches GeoSys. "
+      security:
+        - geosys_bearer: []
+        - geosys_auth:
+            - read
+      tags:
+        - systeme
+  /systeme/taches:
+    post:
+      summary: Obtenir une liste de tâches selon des critères
+      tags:
+        - systeme
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/systeme_taches_retour'
+              examples:
+                Tâches trouvées:
+                  value:
+                    taches:
+                      - id: GST1
+                        active: true
+                        statut: EN COURS
+                        categorie: FME
+                        etiquette: API
+                        env: DEV
+                        adresse_exec: 's-she-fmetst:8080'
+                        id_exec: '2349'
+                        courriel: ennio.morricone@canada.ca
+                        equipe: HYDRO
+                        info_json: ''
+                        info_texte: ''
+                        commentaire: ''
+                      - dt_c: '2020-09-01 11:40:13.9'
+                        dt_m: '2020-09-01 11:40:17.8'
+                        etampe: jh
+                        id: GST3
+                        active: true
+                        statut: ''
+                        categorie: ''
+                        etiquette: '{92876270-eb83-11ea-aedd-04d9f5aa728b}'
+                        env: ''
+                        adresse_exec: ''
+                        id_exec: ''
+                        courriel: ''
+                        equipe: ''
+                        info_json: '{"sujet": "CORINT_50K_20180416_CJH3.zip", "commande": "https://geosys-api/envoyer_message", "expediteur": "Système GeoSys/GeoSys System", "destinataire": "saul.goodman@canada.ca"}'
+                        info_texte: ''
+                        commentaire: ''
+                Aucune tâche ne correspond aux critères:
+                  value:
+                    taches: []
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_erreur'
+      operationId: post-systeme-taches
+      security:
+        - geosys_bearer: []
+        - geosys_auth:
+            - read
+      description: "Permet d'obtenir la liste des tâches GeoSys qui correspondent à des critères. Par défaut, seules les tâches actives sont retournées."
+      parameters:
+        - schema:
+            type: boolean
+            default: 'false'
+            enum:
+              - 'True'
+              - 'False'
+          in: query
+          name: inactive
+          description: "Fanion indiquant d'inclure les tâches inactives ou non dans le résultat"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+            examples:
+              Exemple:
+                value:
+                  categorie: FME
+                  etiquette: API
+        description: "Un objet JSON contenant les critères d'extraction des entrées dans la table des tâches GeoSys.  "
+  '/systeme/tache/post-traitement/{id_tache}':
+    parameters:
+      - schema:
+          type: string
+        name: id_tache
+        in: path
+        required: true
+    post:
+      summary: "Déclencher le post-traitement d'une tâche"
+      operationId: post-systeme-tache-post-traitement-id_tache
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/message_erreur'
+      tags:
+        - systeme
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+            examples:
+              Exemple pour le post-traitement de job FME:
+                value:
+                  id: 2348
+                  result:
+                    id: 2348
+                    status: FME_FAILURE
+                    priority: -1
+                    timeStarted: '2020-08-26T12:53:00-04:00'
+                    timeFinished: '2020-08-26T12:53:01-04:00'
+                    requesterHost: 132.156.18.248
+                    statusMessage: A fatal error has occurred. Check the logfile above for details
+                    timeRequested: '2020-08-26T12:53:00-04:00'
+                    numFeaturesOutput: 0
+                    requesterResultPort: -1
+                  status: FME_FAILURE
+                  request:
+                    NMDirectives:
+                      directives: []
+                      failureTopics: []
+                      successTopics:
+                        - ELP
+                    TMDirectives:
+                      rtc: false
+                      tag: Default
+                      ttc: -1
+                      ttl: -1
+                      priority: -1
+                      description: ''
+                    workspacePath: '"GeoSys/LivrerMD.fmw"'
+                    publishedParameters:
+                      - name: SECONDES
+                        value: '1'
+                  userName: holden
+                  workspace: LivrerMD.fmw
+                  engineHost: S-SHE-FMETST
+                  engineName: S-SHE-FMETST_Engine2
+                  repository: GeoSys
+                  timeQueued: '2020-08-26T12:53:00-04:00'
+                  description: ''
+                  timeStarted: '2020-08-26T12:53:00-04:00'
+                  timeFinished: '2020-08-26T12:53:01-04:00'
+                  timeDelivered: '2020-08-26T12:53:01-04:00'
+                  timeSubmitted: '2020-08-26T12:53:00-04:00'
+        description: 'Un objet JSON contenant les informations nécessaires au post-traitement. Selon le type de tâche, le contenu peut varier.'
+      description: 'Déclencher le post-traitement pour une tâche spécifique à partir de son ID dans la table des tâches GeoSys. '
+      security:
+        - geosys_bearer: []
+        - geosys_auth:
+            - read
 components:
   schemas:
-    message_erreur:
-      title: message_erreur
+    general_liste_valeur:
+      title: general_liste_valeur
       type: object
-      x-examples: {}
-      properties:
-        message:
-          type: string
-    message_succes:
-      title: message_succes
-      type: object
-      x-examples: {}
       properties:
         value:
-          type: string
-    suivi_prod-unite_travail_2-no_rel:
-      title: suivi_prod-unite_travail_2-no_rel
-      type: object
-      properties:
-        etampe:
-          type: string
-        dt_c:
-          type: string
-        dt_m:
-          type: string
-        id_ut:
-          type: string
-        id_lot:
-          type: string
-        date_prevue_fin:
-          type: string
-        date_debut:
-          type: string
-        date_fin:
-          type: string
-        where_clause:
-          type: string
-        geom:
-          type: string
-    suivi_prod-lot-no_rel:
-      title: suivi_prod-lot-no_rel
-      type: object
-      properties:
-        etampe:
-          type: string
-        dt_c:
-          type: string
-        dt_m:
-          type: string
-        id_lot:
-          type: string
-        operateur:
-          type: string
-        date_debut:
-          type: string
-        date_fin:
-          type: string
-        theme_cl:
-          type: integer
-        type_travail_cl:
-          type: integer
-        statut_lot_cl:
-          type: integer
-    suivi_prod-featuretype:
-      title: suivi_prod-featuretype
-      type: object
-      description: ''
-      properties:
-        etampe:
-          type: string
-        dt_c:
-          type: string
-        dt_m:
-          type: string
-        id_lot:
-          type: string
-        local_name:
-          type: string
-        spatial_repres_type_pna:
-          type: integer
-    suivi_prod-code:
-      title: suivi_prod-code
-      type: object
-      properties:
-        id:
-          type: integer
-        id_liste_code:
-          type: integer
-        nom:
-          type: string
-        desc_en:
-          type: string
-        desc_fr:
-          type: string
-    suivi_prod-code_list:
-      title: suivi_prod-code_list
-      type: object
-      properties:
-        id:
-          type: integer
-        nom:
-          type: string
-        desc_en:
-          type: string
-        desc_fr:
-          type: string
-    suivi_prod-etape_ut:
-      title: suivi_prod-etape_ut
-      type: object
-      properties:
-        etampe:
-          type: string
-        dt_c:
-          type: string
-        dt_m:
-          type: string
-        id:
-          type: string
-        id_ut:
-          type: string
-        nom_etape_cl:
-          type: integer
-        description:
-          type: string
-        operateur:
-          type: string
-        date_debut:
-          type: string
-        date_fin:
-          type: string
-        statut_etape_cl:
-          type: integer
-    suivi_prod-executant:
-      title: suivi_prod-executant
-      type: object
-      properties:
-        etampe:
-          type: string
-        dt_c:
-          type: string
-        dt_m:
-          type: string
-        id:
-          type: string
-        id_contractant:
-          type: string
-        no_contrat:
-          type: string
-        prix_contrat:
-          type: number
-    suivi_prod-sous_unite_travail-no_rel:
-      title: suivi_prod-sous_unite_travail-no_rel
-      type: object
-      properties:
-        etampe:
-          type: string
-        dt_c:
-          type: string
-        dt_m:
-          type: string
-        id_lot:
-          type: string
-        id_ut:
-          type: string
-        date_prevue_fin:
-          type: string
-        date_debut:
-          type: string
-        date_fin:
-          type: string
-    suivi_prod-sous_unite_travail-full_rel:
-      title: suivi_prod-sous_unite_travail-full_rel
-      type: object
-      properties:
-        sous_unite_travail:
-          $ref: '#/components/schemas/suivi_prod-sous_unite_travail-no_rel'
-        relation:
-          type: object
-          properties:
-            etape_sut:
-              type: array
-              items:
-                $ref: '#/components/schemas/suivi_prod-etape_sut'
-    suivi_prod-unite_travail_2-full_rel:
-      title: suivi_prod-unite_travail_2-full_rel
-      type: object
-      properties:
-        unite_travail_2:
-          $ref: '#/components/schemas/suivi_prod-unite_travail_2-no_rel'
-        relations:
-          type: object
-          properties:
-            etape_ut:
-              type: array
-              items:
-                $ref: '#/components/schemas/suivi_prod-etape_ut'
-            sous_unite_travail:
-              type: array
-              items:
-                $ref: '#/components/schemas/suivi_prod-sous_unite_travail-full_rel'
-    suivi_prod-lot-full_rel:
-      title: suivi_prod-lot-full_rel
-      type: object
-      properties:
-        lot:
-          $ref: '#/components/schemas/suivi_prod-lot-no_rel'
-        relations:
-          type: object
-          properties:
-            executant:
-              $ref: '#/components/schemas/suivi_prod-executant'
-            unite_travail_2:
-              type: array
-              items:
-                $ref: '#/components/schemas/suivi_prod-unite_travail_2-full_rel'
-            feature_type:
-              type: array
-              items:
-                $ref: '#/components/schemas/suivi_prod-featuretype'
-    suivi_prod-etape_sut:
-      title: suivi_prod-etape_sut
-      type: object
-      properties:
-        etampe:
-          type: string
-        dt_c:
-          type: string
-        dt_m:
-          type: string
-        id:
-          type: string
-        id_ut:
-          type: string
-        nom_etape_cl:
-          type: integer
-        description:
-          type: string
-        operateur:
-          type: string
-        date_debut:
-          type: string
-        date_fin:
-          type: string
-        statut_etape_cl:
-          type: integer
-        id_sous_unite_travail:
-          type: string
-    usager:
-      title: usager
-      type: object
-      properties:
-        nom:
-          type: string
-        mot_de_passe:
-          type: string
-        scopes:
           type: array
           items:
             type: string
-        equipes:
-          type: array
-          items:
-            type: string
-        themes:
-          type: array
-          items:
-            type: string
-        cle_aws_id:
+    general_message:
+      title: general_message
+      type: object
+      properties:
+        message:
           type: string
     geodata_edition:
       title: geodata_edition
@@ -1508,44 +2017,41 @@ components:
           type: string
         geom:
           type: string
-    systeme_ress_retour:
-      title: systeme_ress_retour
+    message_erreur:
+      title: message_erreur
       type: object
+      x-examples:
+        exemple:
+          exception: ''
+          message: ''
+          stack:
+            - ''
+          traceback:
+            - ''
       properties:
-        value:
-          type: object
-    systeme_ress_requete:
-      title: systeme_ress_requete
-      type: object
-      properties:
-        fichiers:
+        message:
+          type: string
+          description: "Message d'erreur"
+        exception:
+          type: string
+          description: "Nom de l'exception lancée"
+        stack:
           type: array
+          description: "Séquence des fichiers appelés d'où provient l'erreur"
           items:
             type: string
-        chemin_recherche:
+        traceback:
           type: array
+          description: "\"traceback\" python de l'exception"
           items:
             type: string
       description: ''
-    suivi_prod_planification:
-      title: suivi_prod_planification
+    message_succes:
+      title: message_succes
       type: object
+      x-examples: {}
       properties:
-        theme:
-          type: string
-        id_ut:
-          type: string
-        type_travail:
-          type: string
-        liste_classes:
-          type: array
-          items:
-            type: string
-        date_fin_prevue:
-          type: string
-        where_clause:
-          type: string
-        geom:
+        value:
           type: string
     metadata_creation:
       title: metadata_creation
@@ -1619,19 +2125,264 @@ components:
           type: array
           items:
             type: string
-    general_liste_valeur:
-      title: general_liste_valeur
+    suivi_prod-code:
+      title: suivi_prod-code
       type: object
       properties:
-        value:
+        id:
+          type: integer
+        id_liste_code:
+          type: integer
+        nom:
+          type: string
+        desc_en:
+          type: string
+        desc_fr:
+          type: string
+    suivi_prod-code_list:
+      title: suivi_prod-code_list
+      type: object
+      properties:
+        id:
+          type: integer
+        nom:
+          type: string
+        desc_en:
+          type: string
+        desc_fr:
+          type: string
+    suivi_prod-etape_sut:
+      title: suivi_prod-etape_sut
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id:
+          type: string
+        id_ut:
+          type: string
+        nom_etape_cl:
+          type: integer
+        description:
+          type: string
+        operateur:
+          type: string
+        date_debut:
+          type: string
+        date_fin:
+          type: string
+        statut_etape_cl:
+          type: integer
+        id_sous_unite_travail:
+          type: string
+    suivi_prod-etape_ut:
+      title: suivi_prod-etape_ut
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id:
+          type: string
+        id_ut:
+          type: string
+        nom_etape_cl:
+          type: integer
+        description:
+          type: string
+        operateur:
+          type: string
+        date_debut:
+          type: string
+        date_fin:
+          type: string
+        statut_etape_cl:
+          type: integer
+    suivi_prod-executant:
+      title: suivi_prod-executant
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id:
+          type: string
+        id_contractant:
+          type: string
+        no_contrat:
+          type: string
+        prix_contrat:
+          type: number
+    suivi_prod-featuretype:
+      title: suivi_prod-featuretype
+      type: object
+      description: ''
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id_lot:
+          type: string
+        local_name:
+          type: string
+        spatial_repres_type_pna:
+          type: integer
+    suivi_prod-lot-full_rel:
+      title: suivi_prod-lot-full_rel
+      type: object
+      properties:
+        lot:
+          $ref: '#/components/schemas/suivi_prod-lot-no_rel'
+        relations:
+          type: object
+          properties:
+            executant:
+              $ref: '#/components/schemas/suivi_prod-executant'
+            unite_travail_2:
+              type: array
+              items:
+                $ref: '#/components/schemas/suivi_prod-unite_travail_2-full_rel'
+            feature_type:
+              type: array
+              items:
+                $ref: '#/components/schemas/suivi_prod-featuretype'
+    suivi_prod-lot-no_rel:
+      title: suivi_prod-lot-no_rel
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id_lot:
+          type: string
+        operateur:
+          type: string
+        date_debut:
+          type: string
+        date_fin:
+          type: string
+        theme_cl:
+          type: integer
+        type_travail_cl:
+          type: integer
+        statut_lot_cl:
+          type: integer
+    suivi_prod-requete_sql:
+      title: suivi_prod-requete_sql
+      type: object
+      properties:
+        sql:
+          type: string
+      description: ''
+    suivi_prod-sous_unite_travail-full_rel:
+      title: suivi_prod-sous_unite_travail-full_rel
+      type: object
+      properties:
+        sous_unite_travail:
+          $ref: '#/components/schemas/suivi_prod-sous_unite_travail-no_rel'
+        relation:
+          type: object
+          properties:
+            etape_sut:
+              type: array
+              items:
+                $ref: '#/components/schemas/suivi_prod-etape_sut'
+    suivi_prod-sous_unite_travail-no_rel:
+      title: suivi_prod-sous_unite_travail-no_rel
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id_lot:
+          type: string
+        id_ut:
+          type: string
+        date_prevue_fin:
+          type: string
+        date_debut:
+          type: string
+        date_fin:
+          type: string
+    suivi_prod-unite_travail_2-full_rel:
+      title: suivi_prod-unite_travail_2-full_rel
+      type: object
+      properties:
+        unite_travail_2:
+          $ref: '#/components/schemas/suivi_prod-unite_travail_2-no_rel'
+        relations:
+          type: object
+          properties:
+            etape_ut:
+              type: array
+              items:
+                $ref: '#/components/schemas/suivi_prod-etape_ut'
+            sous_unite_travail:
+              type: array
+              items:
+                $ref: '#/components/schemas/suivi_prod-sous_unite_travail-full_rel'
+    suivi_prod-unite_travail_2-no_rel:
+      title: suivi_prod-unite_travail_2-no_rel
+      type: object
+      properties:
+        etampe:
+          type: string
+        dt_c:
+          type: string
+        dt_m:
+          type: string
+        id_ut:
+          type: string
+        id_lot:
+          type: string
+        date_prevue_fin:
+          type: string
+        date_debut:
+          type: string
+        date_fin:
+          type: string
+        where_clause:
+          type: string
+        geom:
+          type: string
+    suivi_prod_planification:
+      title: suivi_prod_planification
+      type: object
+      properties:
+        theme:
+          type: string
+        id_ut:
+          type: string
+        type_travail:
+          type: string
+        liste_classes:
           type: array
           items:
             type: string
-    general_message:
-      title: general_message
-      type: object
-      properties:
-        message:
+        date_fin_prevue:
+          type: string
+        where_clause:
+          type: string
+        geom:
           type: string
     systeme_envs:
       title: systeme_envs
@@ -1646,6 +2397,13 @@ components:
                 type: string
               url:
                 type: string
+    systeme_fichier:
+      title: systeme_fichier
+      type: object
+      properties:
+        fichier:
+          type: string
+          format: binary
     systeme_liste_contenants_fichiers:
       title: systeme_liste_contenants_fichiers
       type: object
@@ -1670,21 +2428,258 @@ components:
                 type: string
               last_modified:
                 type: string
-    suiv_prod-requete_sql:
-      title: suivi_prod-requete_sql
+    systeme_ress_requete:
+      title: systeme_ress_requete
+      type: object
+      description: "Corps de l'appel REST pour extraire des ressources"
+      properties:
+        fichiers:
+          type: array
+          description: Liste des fichiers à lire
+          example: '"pro/general/res.xml","tst/hydro/resshydro.json"'
+          items:
+            type: string
+        chemin_recherche:
+          type: array
+          description: Liste des chemins à chercher dans les fichiers
+          example: '"apps/fme","/bd/prod/params"'
+          items:
+            type: string
+        cle_gsh:
+          type: string
+      x-examples: {}
+    systeme_ress_retour:
+      title: systeme_ress_retour
+      type: object
+      description: "Corps de la réponse de l'appel REST d'extraction de ressources"
+      x-examples: {}
+      properties:
+        '<chemin>':
+          type: object
+          example: '"apps/fme"'
+          description: "&lt;chemin&gt; est dynamique. Il s'agit du chemin spécifié lors de l'appel"
+          properties:
+            source:
+              type: string
+              description: Fichier dans lequel la valeur a été trouvée
+              example: '"pro/general/res.xml"'
+            value:
+              example: '"%FME2020%"'
+              type: string
+              description: Chaîne de caractères ou objet JSON
+    usager:
+      title: usager
       type: object
       properties:
-        sql:
+        nom:
           type: string
-      description: ''
-    systeme_fichier:
-      title: systeme_fichier
+        mot_de_passe:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        equipes:
+          type: array
+          items:
+            type: string
+        themes:
+          type: array
+          items:
+            type: string
+        cle_aws_id:
+          type: string
+    systeme_cryptage_decryptage_requete:
+      title: systeme_cryptage_decryptage_requete
+      type: object
+      description: "Corps de l'appel REST pour le cryptage et le décryptage de texte."
+      properties:
+        texte:
+          type: string
+        cle_gsh:
+          type: string
+      required:
+        - texte
+        - cle_gsh
+    systeme_cryptage_decryptage_retour:
+      title: systeme_cryptage_decryptage_retour
+      type: object
+      description: "Corps de la réponse de l'appel REST du cryptage et décryptage de texte."
+      properties:
+        texte:
+          type: string
+      x-examples: {}
+    systeme_crypto_cle_gsh_retour:
+      title: systeme_crypto_cle_gsh_retour
+      description: Corps de la réponse pour la création de la clé gsh
       type: object
       properties:
-        fichier:
+        cle_gsh:
           type: string
-          format: binary
+    systeme_crypto_cle_gsh_requete:
+      title: systeme_crypto_cle_gsh_requete
+      type: object
+      description: "Corps de l'appel REST pour la création de la clé gsh"
+      properties:
+        texte:
+          type: string
+      required:
+        - texte
+    systeme_tache_requete:
+      title: systeme_tache_requete
+      type: object
+      description: "Corps de l'appel REST pour insérer une tâche dans la table des tâches"
+      properties:
+        statut:
+          type: string
+          description: Statut de la tâche
+        categorie:
+          type: string
+          description: Catégorie de la tâche
+        etiquette:
+          type: string
+          description: Étiquette de la tâche
+        env:
+          type: string
+          description: Environnement de travail
+        adresse_exec:
+          type: string
+          description: "Adresse où s'exécute la tâche"
+        id_exec:
+          type: string
+          description: Identifiant de la tâche lors de son exécution
+        courriel:
+          type: string
+          description: Destinataire des courriels associés à la tâche
+        equipe:
+          type: string
+          description: Équipe de la tâche
+        info_json:
+          description: Informations supplémentaires de la tâche en format json
+          type: object
+        info_texte:
+          type: string
+          description: Informations supplémentaires de la tâche en format texte
+        commentaire:
+          type: string
+          description: Commentaire sur la tâche
+    systeme_tache_retour:
+      title: systeme_tache_retour
+      type: object
+      description: "Corps de la réponse de l'appel REST d'insertion de tâche"
+      properties:
+        id:
+          type: string
+          description: Identifiant unique de la tâche
+    systeme_tache_id_requete:
+      title: systeme_tache_id_requete
+      type: object
+      description: "Corps de l'appel REST pour la mise à jour d'une tâche dans la table des tâches"
+      properties:
+        active:
+          type: boolean
+          description: Fanion indiquant si la tâche est active ou non
+        statut:
+          type: string
+          description: Statut de la tâche
+        categorie:
+          type: string
+          description: Catégorie de la tâche
+        etiquette:
+          type: string
+          description: Étiquette de la tâche
+        env:
+          type: string
+          description: Environnement de travail
+        adresse_exec:
+          type: string
+          description: "Adresse où s'exécute la tâche"
+        id_exec:
+          type: string
+          description: Identifiant de la tâche lors de son exécution
+        courriel:
+          type: string
+          description: Destinataire des courriels associés à la tâche
+        equipe:
+          type: string
+          description: Équipe de la tâche
+        info_json:
+          description: Informations supplémentaires de la tâche en format json
+          type: object
+        info_texte:
+          type: string
+          description: Informations supplémentaires de la tâche en format texte
+        commentaire:
+          type: string
+          description: Commentaire sur la tâche
+    systeme_tache_id_retour:
+      title: systeme_tache_id_retour
+      type: object
+      description: "Corps de la réponse de l'appel REST de la mise à jour d'une tâche"
+      properties:
+        id:
+          type: string
+          description: Identifiant unique de la tâche
+    systeme_taches_retour:
+      title: systeme_taches_retour
+      type: object
+      description: "Corps de la réponse de l'appel REST de la liste des tâches"
+      properties:
+        taches:
+          type: array
+          description: Informations de la tâche
+          items:
+            $ref: '#/components/schemas/systeme_tache_info'
+    systeme_tache_info:
+      title: systeme_tache_info
+      type: object
+      description: "Informations d'une tâche GeoSys"
+      properties:
+        id:
+          type: string
+          description: Identifiant unique de la tâche
+        active:
+          type: string
+          description: Fanion indiquant si la tâche est active ou non
+        statut:
+          type: string
+          description: Statut de la tâche
+        categorie:
+          type: string
+          description: Catégorie de la tâche
+        etiquette:
+          type: string
+          description: Étiquette de la tâche
+        env:
+          type: string
+          description: Environnement de travail
+        adresse_exec:
+          type: string
+          description: "Adresse où s'exécute la tâche"
+        id_exec:
+          type: string
+          description: Identifiant de la tâche lors de son exécution
+        courriel:
+          type: string
+          description: Destinataire des courriels associés à la tâche
+        equipe:
+          type: string
+          description: Équipe de la tâche
+        info_json:
+          description: Informations supplémentaires de la tâche en format json
+          type: object
+        info_texte:
+          type: string
+          description: Informations supplémentaires de la tâche en format texte
+        commentaire:
+          type: string
+          description: Commentaire sur la tâche
   securitySchemes:
+    geosys_bearer:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: "Dans le champ **Value**, inscrire **'Bearer &lt;JWT&gt;'** où &lt;JWT&gt; est la valeur de **access_token** obtenue par l'appel de /securite/login"
     geosys_auth:
       flows:
         implicit:
