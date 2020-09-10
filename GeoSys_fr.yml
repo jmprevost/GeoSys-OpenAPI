@@ -163,7 +163,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/general_message'
-      description: "Service intégrateur pour la validation d'un fichier de métadonnées."
+      description: "Service qui valide un fichier JSON selon le schéma des mnétadonnées de GeoSys. On peut passer un fichiers JSON ou plusieurs en même temps s'ils sont zippés."
       tags:
         - meta
       requestBody:
@@ -173,11 +173,34 @@ paths:
               $ref: '#/components/schemas/metadata_validation'
         description: ''
       security:
-        - geosys_bearer:
-            - read
         - geosys_auth:
             - read
+        - geosys_bearer: []
     parameters: []
+  /meta/livrer-md:
+    post:
+      summary: ''
+      operationId: post-meta-livrer-md
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/general_message'
+      description: "Permet d'enregistrer des métadonnées dans GeoSys. Les métadonnées sont passées au système par l'entremise d'un fichier JSON. Celui-ci doit respecter le schéma GeoSys. Pour s'assurer de la conformité, il possible de valider le fichier JSON en utilisant le point d'entrée: /meta/valider-md. \n\nOn peut passer un ou plusieur fichiers JSON. Pour passer plusieurs fichiers il faut au préalable les zipper avant de les transmettre au système."
+      security:
+        - geosys_auth:
+            - write
+        - geosys_bearer: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/metadata_livraison'
+        description: ''
+      tags:
+        - meta
   /securite/login:
     get:
       summary: ''
@@ -2093,15 +2116,18 @@ components:
       title: metadata_validation
       type: object
       properties:
-        theme:
-          type: string
-        id_ut:
-          type: string
-        fichier_json:
+        fichier:
           type: string
           format: binary
-        logfile:
+    metadata_livraison:
+      title: metadata_livraison
+      type: object
+      properties:
+        maj_etendue:
           type: string
+        fichier:
+          type: string
+          format: binary
     securite_reponse_login:
       title: securite_reponse_login
       type: object
